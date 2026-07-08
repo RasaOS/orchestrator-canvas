@@ -6,6 +6,10 @@ surgical; none block the current session-management model.
 1. **`args.canvas_id` on POST /v1/commands** — address a NAMED canvas from any
    session, decoupling canvas identity from session identity. Retires the
    one-canvas-per-session constraint and enables multi-screen apps.
+   *(Doctrine note 2026-07-07: APP_MODEL.md now formalizes screens-as-files
+   with a single active-screen projection and a nav contract — the file model
+   is already 1:1 ready for named canvases; this ask is the unlock for
+   showing screens simultaneously.)*
 2. **Auto-create `args.cwd`** (or an explicit `create:true` flag) — today a
    nonexistent cwd silently falls back to the default session (verified live,
    kernel v0.31.0), which forces the shell's bootstrap turn. Auto-vivify would

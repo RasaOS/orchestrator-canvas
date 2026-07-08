@@ -1,0 +1,36 @@
+{
+  "$schema": "https://rasa-os.github.io/schema/rasa.schema.v1.json",
+  "contract_version": "1.3.0",
+  "name": "rasa.orchestrator.canvas",
+  "version": "0.2.0",
+  "kind": "orchestrator",
+  "description": "The vertical-builder orchestrator: authors and maintains canvas-vertical UIs (rasa.layout.v1 documents + sandboxed html artifacts) conversationally. Each app it manages is a session keyed by its own workspace directory; the orchestrator bootstraps that directory, owns the app's canvas, handles ui_event interactions as the app's runtime brain, and keeps the screens honest to the component contract in content/.",
+  "source": {
+    "repo": "https://github.com/RasaOS/orchestrator-canvas",
+    "branch": "main"
+  },
+  "tier": "Free",
+  "capabilities": [],
+  "permissions": [
+    "fs:write",
+    "shell:exec"
+  ],
+  "requires": {},
+  "rasa": {
+    "role": "L2-vertical-builder (tenant-resident)",
+    "tenant_model": "The element definition is tenant-agnostic (the species); its INSTANCES are tenant-resident: sessions run with cwd inside a tenant's tree, so the tenant is the parent context (its CLAUDE.md/files/data in scope, kernel stamps tenant identity) and every app it manages is one of that tenant's UI surfaces. Composition target: tenant (where) x domain.* (about) x orchestrator.canvas (how).",
+    "session_model": "one app = one session, keyed (element=rasa.orchestrator.canvas, cwd=<tenant>/.rasaos/apps/<app-id>). The app directory is bootstrapped by this orchestrator on first contact and doubles as the app's persistent store, inside the tenant's own tree.",
+    "canvas_model": "one canvas per app session (kernel keys canvases by session until args.canvas_id lands — see kernel asks in content/KERNEL_ASKS.md).",
+    "note": "The renderer contract lives with the shell (frontend-rasaos, SA-026/027/028); this element carries the AUTHORING doctrine. Keep the two in lockstep via content/COMPONENTS.md."
+  },
+  "element": {
+    "files": []
+  },
+  "seed": {
+    "files": []
+  },
+  "scaffold": {
+    "description": "No install scaffold — this orchestrator operates in-session.",
+    "directories": []
+  }
+}

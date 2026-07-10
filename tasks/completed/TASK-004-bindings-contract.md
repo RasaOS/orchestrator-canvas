@@ -1,7 +1,7 @@
 ---
 id: TASK-004
 category: spec
-status: backlog
+status: completed
 ---
 
 # TASK-004: The binding registry — `bindings[]` + `writes[]` contract + enforcement
@@ -72,11 +72,19 @@ eventually consumes (registered-bindings target state) and what makes
 
 ## Acceptance criteria
 
-- [ ] Golden app declares ≥1 binding + a `writes[]` event and passes.
-- [ ] `binding-unknown-module` fixture FAILS check-app (not warns).
-- [ ] All pre-existing fixtures still fail; check-doctrine GREEN.
-- [ ] Schema change is purely additive (old golden-shaped app.json without
-      bindings still validates).
+- [x] Golden app declares ≥1 binding + a `writes[]` event and passes.
+      *(Two bindings — tenant-read orders table + module read-write task-queue;
+      the `task_logged` event writes both the bound collection and state;
+      GREEN 0 fail 0 warn.)*
+- [x] `binding-unknown-module` fixture FAILS check-app (not warns).
+      *(FAIL: "source.module 'rasa.module.ghost' is not in
+      context.json#modules" — index present, hard fail, per review #13.)*
+- [x] All pre-existing fixtures still fail; check-doctrine GREEN.
+      *(Five fixtures RED; gate GREEN ×2 incl. pre-commit.)*
+- [x] Schema change is purely additive (old golden-shaped app.json without
+      bindings still validates). *(All four pre-existing fixtures carry no
+      bindings and pass the structural layer — their fails remain their named
+      reasons; jsonschema lib absent, structural evidence per TASK-003 note.)*
 
 ## Verification plan (per the done-gate)
 
@@ -109,11 +117,11 @@ eventually consumes (registered-bindings target state) and what makes
 
 ## Self-review checklist
 
-- [ ] I followed the execution order in the spec.
-- [ ] Every acceptance criterion is met and individually verified.
-- [ ] I verified each step, not just the end state.
-- [ ] The done-gate passes (every gate in `.claude/done-gate.md`).
-- [ ] I didn't touch artifacts outside "Artifacts expected to change".
+- [x] I followed the execution order in the spec.
+- [x] Every acceptance criterion is met and individually verified.
+- [x] I verified each step, not just the end state.
+- [x] The done-gate passes (every gate in `.claude/done-gate.md`).
+- [x] I didn't touch artifacts outside "Artifacts expected to change".
 
 ### Dependencies
 

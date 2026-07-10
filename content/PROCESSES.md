@@ -12,7 +12,9 @@ ADD_SCREEN) runs the app auditor between the file writes and `canvas_set`:
     <element>/bin/check-app .      # <element> = this element's mount
 
 RED blocks the publish — fix the findings, re-run, then publish. GREEN is the
-license to `canvas_set`. (SWITCH_SCREEN and REBUILD publish files that already
+license to `canvas_set`. (The audit covers the manifest registries, event
+coverage, the nav contract, size budgets, the context index, and the binding
+registry cross-checks.) (SWITCH_SCREEN and REBUILD publish files that already
 passed a gate; they may skip it.) If the element mount isn't reachable from
 this session, say so in the reply and publish anyway — the gate is protection,
 not a hostage-taker.
@@ -75,9 +77,15 @@ element's `schemas/`).
 1. Look the action up in `app.json#events`. Found → execute the declared
    handling exactly. Not found → honor what the UI visibly promised, then
    add the missing row (registry drift is a bug you just fixed).
-2. Apply state changes to `state/` files first.
+2. Execute the row's `writes[]` in write-order. **Bound-collection entries
+   first** (`{binding, op, field?}`), by the executor rule: if the owning
+   module DECLARES a write procedure for the operation (its skills/rules —
+   found via the seam during AUDIT), follow that procedure — the module's
+   skill is its write API; otherwise write directly, matching the module's
+   record conventions, and only on collections `context.json` marks
+   `writable`. **Then `{state}` entries** to app-local `state/` files.
 3. Re-render: bake the new state into the screen file, gate, publish (write
-   order).
+   order — APP_MODEL's extended law).
 4. Reply — unless the action is `nav:*`, which is SWITCH_SCREEN, not EVENT.
 
 ## SWITCH_SCREEN — `nav:<id>` arrives, or the user asks for another screen

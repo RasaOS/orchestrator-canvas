@@ -24,7 +24,8 @@
       "props": {
         "buttons": [
           { "id": "order_opened", "intent": "order_opened", "label": "Open newest" },
-          { "id": "refresh_requested", "intent": "refresh_requested", "label": "Refresh" }
+          { "id": "refresh_requested", "intent": "refresh_requested", "label": "Refresh" },
+          { "id": "task_logged", "intent": "task_logged", "label": "Log follow-up task" }
         ]
       }
     }

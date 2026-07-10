@@ -66,7 +66,60 @@
             "items": { "type": "string" },
             "description": "region id(s) that emit this action"
           },
-          "handling": { "type": "string", "minLength": 1, "description": "what the user was promised — the declared behavior" }
+          "handling": { "type": "string", "minLength": 1, "description": "what the user was promised — the declared behavior" },
+          "writes": {
+            "type": "array",
+            "description": "what this action mutates, in write-order: bound-collection entries execute per the executor rule (PROCESSES.md §EVENT — module-declared procedure first, direct conventional writes only on writable collections), {state} entries are app-local memory",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "oneOf": [
+                { "required": ["binding", "op"] },
+                { "required": ["state"] }
+              ],
+              "properties": {
+                "binding": { "type": "string", "description": "a bindings[].id this action writes" },
+                "op": { "enum": ["create-record", "update-record", "move-record", "delete-record"] },
+                "field": { "type": "string" },
+                "state": { "type": "string", "description": "an app-local state/ file this action writes" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "bindings": {
+      "type": "array",
+      "description": "the binding registry (APP_MODEL.md §bindings) — one row per bound region; ids unique; cross-field law (region/screen existence, context.json resolution, read-write-has-writer) audited by bin/check-app",
+      "items": {
+        "type": "object",
+        "required": ["id", "region", "screen", "source", "mode", "direction"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "region": { "type": "string", "minLength": 1, "description": "the region this binding feeds" },
+          "screen": { "type": "string", "minLength": 1, "description": "the screen that region lives on" },
+          "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "oneOf": [
+              { "required": ["module", "collection"] },
+              { "required": ["tenant"] },
+              { "required": ["context"] }
+            ],
+            "properties": {
+              "module": { "type": "string", "description": "dotted module name — must resolve in context.json#modules" },
+              "collection": { "type": "string", "description": "collection id (optionally id/sub-path) declared by that module" },
+              "select": { "const": "*", "description": "v1 grammar: '*' (whole collection) only" },
+              "tenant": { "type": "string", "description": "tenant-relative file path (read-only sugar equivalent: data_sources[])" },
+              "context": { "type": "string", "description": "derived-mode query over context.json" }
+            }
+          },
+          "shape": { "enum": ["folder-of-records", "record", "file", "table", "derived"] },
+          "mode": { "enum": ["bound", "derived", "provision"] },
+          "direction": { "enum": ["read", "read-write"] },
+          "reactive": { "enum": ["on-event", "live"], "description": "absent = on-event (today's mechanism); live requires the kernel file-event bridge (KERNEL_ASKS #11)" },
+          "provisioned": { "type": "boolean", "description": "true when this binding's records were provisioned by this app (provision-then-bind)" }
         }
       }
     }

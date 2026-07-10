@@ -63,7 +63,17 @@ and tenant data files. Published schema: `rasa.canvas.context.v1`
   ],
   "events": [
     { "action": "order_opened", "emits": ["orders"], "handling": "read the order from the source, bake detail into the active screen, publish" },
+    { "action": "status_changed", "emits": ["orders"],
+      "writes": [ { "binding": "queue", "op": "move-record", "field": "status" },
+                  { "state": "filters.json" } ],
+      "handling": "move the bound record between state subdirs, refresh filters, publish" },
     { "action": "nav:home",     "emits": ["nav"],    "handling": "SWITCH_SCREEN home" }
+  ],
+  "bindings": [
+    { "id": "queue", "region": "orders", "screen": "orders",
+      "source": { "module": "rasa.module.tasks", "collection": "tasks", "select": "*" },
+      "shape": "folder-of-records", "mode": "bound", "direction": "read-write",
+      "reactive": "on-event" }
   ]
 }
 ```
@@ -81,14 +91,47 @@ Rules:
 - `data_sources[]` paths are tenant-relative; never point outside the tenant
   root.
 
+## bindings[] — the binding registry
+
+One row per bound region: the declared data relationship the screen renders.
+Schema: `bindings[]` in `rasa.app.v1` (published). check-app enforces the
+cross-field law.
+
+- **`id`** — unique across the registry (check-app enforces).
+- **`region` + `screen`** — must name a registered screen and a region that
+  exists on it. Multiple bindings may share one source (one row per region).
+- **`source`** — exactly ONE of: `{module, collection, select?}` (a sibling
+  module's collection — must resolve in `context.json#modules`, and
+  `read-write` requires the collection be marked `writable`); `{tenant:
+  "<path>"}` (a tenant file); `{context: "<query>"}` (derived mode). `select`
+  v1 grammar is `"*"` only.
+- **`mode`** — `bound` (live relationship) · `derived` (synthesized snapshot)
+  · `provision` (created-then-bound; carries `provisioned: true`).
+- **`direction`** — `read` | `read-write`. A `read-write` binding must have
+  at least one event that writes it (check-app enforces).
+- **`reactive`** — absent/`on-event` (today: re-derive on the next EVENT
+  turn) | `live` (auto-updates on external file change — requires the kernel
+  file-event bridge, KERNEL_ASKS #11; the same declaration upgrades free).
+- **`events[].writes[]`** — what an action mutates, in write-order:
+  `{binding, op, field?}` entries execute per the executor rule (PROCESSES.md
+  §EVENT); `{state: "<file>"}` entries are app-local memory. `op` ∈
+  `create-record | update-record | move-record | delete-record`.
+- **`data_sources[]` is read-only sugar** — a row is equivalent to a binding
+  `{source:{tenant}, shape:"file", mode:"bound", direction:"read"}`. New
+  authoring prefers `bindings[]`; both are legal.
+
 ## Persistence — files are truth, Redis is a projection
 
 The kernel canvas store is Redis-backed and a container restart can wipe it
 (verified 2026-07-07; KERNEL_ASKS #6–8). Doctrine:
 
-- **The write-order law:** 1) `screens/<id>.json` → 2) `app.json` (+ `state/`
-  and `CHANGELOG.md` if touched) → 3) `canvas_set`. Never reversed, never
-  partial. A publish that skipped the file write didn't happen.
+- **The write-order law (extended for bindings):** 1) bound module-record
+  writes — via the owning module's declared procedure when one exists, else
+  direct conventional writes, allowed only on collections `context.json`
+  marks `writable` → 2) app-local `state/` → 3) re-derive + write
+  `screens/<id>.json` → 4) `app.json` (+ `context.json` if re-audited,
+  + `CHANGELOG.md`) → 5) `canvas_set`. Never reversed, never partial. A
+  publish that skipped a file write didn't happen.
 - Nothing durable exists only on the canvas. If it matters, it is in a file
   before it is on screen.
 - If `canvas_get` returns empty or older than the files: run REBUILD silently

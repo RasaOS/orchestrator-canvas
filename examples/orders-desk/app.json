@@ -2,7 +2,7 @@
   "app": "rasa.app.v1",
   "id": "orders-desk",
   "name": "Orders Desk",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "created": "2026-07-08",
   "screens": [
     { "id": "home", "title": "Overview", "default": true },
@@ -16,6 +16,22 @@
     { "action": "nav:home", "emits": ["nav"], "handling": "SWITCH_SCREEN home" },
     { "action": "nav:orders", "emits": ["nav"], "handling": "SWITCH_SCREEN orders" },
     { "action": "order_opened", "emits": ["actions"], "handling": "read the newest order from the source, bake its detail into the orders screen, publish" },
-    { "action": "refresh_requested", "emits": ["actions"], "handling": "re-derive data/orders-summary.json from the source, bake fresh numbers into both screens, publish the active one" }
+    { "action": "refresh_requested", "emits": ["actions"], "handling": "re-derive data/orders-summary.json from the source, bake fresh numbers into both screens, publish the active one" },
+    { "action": "task_logged", "emits": ["actions"],
+      "writes": [
+        { "binding": "task-queue", "op": "create-record" },
+        { "state": "filters.json" }
+      ],
+      "handling": "create a follow-up TASK record in the bound tasks collection (via the module's declared procedure), refresh the open-tasks KPI, publish" }
+  ],
+  "bindings": [
+    { "id": "orders-table", "region": "orders", "screen": "orders",
+      "source": { "tenant": "../../data/orders.csv" },
+      "shape": "table", "mode": "bound", "direction": "read",
+      "reactive": "on-event" },
+    { "id": "task-queue", "region": "kpis", "screen": "home",
+      "source": { "module": "rasa.module.tasks", "collection": "tasks", "select": "*" },
+      "shape": "folder-of-records", "mode": "bound", "direction": "read-write",
+      "reactive": "on-event" }
   ]
 }

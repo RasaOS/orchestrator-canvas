@@ -1,5 +1,32 @@
 # Changelog — rasa.domain.canvas
 
+## 0.9.0 — 2026-07-09
+
+**The binding registry lands (TASK-004) — requirement #2's foundation.**
+`app.json` gains `bindings[]` (one row per bound region: `id/region/screen/
+source/shape/mode/direction/reactive/provisioned`) and events gain
+`writes[]` (`{binding, op, field?}` bound-collection writes + `{state}`
+app-local writes) — both additive within `rasa.app.v1`, published in the
+schema. Source forms: `{module, collection, select}` (resolves against
+`context.json#modules`; `read-write` requires the collection be marked
+`writable`) · `{tenant: path}` (with `data_sources[]` now defined as its
+read-only sugar) · `{context: query}` (derived mode). `reactive` defaults
+`on-event`; `live` awaits the kernel file-event bridge (ask #11) and the same
+declaration upgrades free. PROCESSES §EVENT carries the resolved-OQ-4
+executor rule (module-declared write procedure first; direct conventional
+writes only on writable collections) and APP_MODEL carries the **extended
+write-order law** (module records → state → screen → app.json → canvas_set).
+Enforcement: `bin/check-app` verifies binding ids unique, region-on-screen
+existence, exactly-one source form, module/collection resolution against the
+context index (fail when the index is present, warn when absent),
+writable-for-read-write, `writes[]` target + op validity, and
+read-write-has-a-writer. Golden app exercises the whole contract (orders
+table bound read to the tenant csv; open-tasks KPI bound read-write to
+module-tasks' `tasks` collection; "Log follow-up task" writes the bound
+collection + state). New negative fixture `binding-unknown-module` — shipped
+WITH a context.json so the resolution check hard-fails — joins the gate
+(five fixtures, all RED).
+
 ## 0.8.0 — 2026-07-09
 
 **The context index lands (TASK-003) — the binding brain's first organ.**

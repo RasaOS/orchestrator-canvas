@@ -1,0 +1,9 @@
+{
+  "_schema": "rasa.canvas.context.v1",
+  "_audited_at": "2026-07-09T00:00:00Z",
+  "_tenant_flavor": "holding-folder",
+  "_tenant_root": "../../..",
+  "modules": [
+    { "name": "rasa.module.tasks", "path": "../../../elements/module-tasks" }
+  ]
+}

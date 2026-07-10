@@ -5,6 +5,12 @@ Curated, append-only record of meaningful project actions (per
 
 ## 2026-07-09
 
+- 📦 **TASK-004 shipped** — the binding registry: `bindings[]` + events
+  `writes[]` (additive in rasa.app.v1), the OQ-4 executor rule in §EVENT,
+  the extended write-order law, full check-app cross-checks, golden app
+  exercising tenant-read + module-read-write bindings, new
+  `binding-unknown-module` fixture (ships WITH context.json → hard-fails).
+  Receipt: tag v0.9.0.
 - 📦 **TASK-003 shipped** — the context index: AUDIT becomes the eighth named
   process (structural three-flavor detection — dry-run verified against the
   real workspace as canon-author; seam-first discovery; typed fields);

@@ -22,6 +22,11 @@ Checks (FAIL = red, blocks publish; WARN = advisory):
   - context.json (the AUDIT index, rasa.canvas.context.v1): warn when absent,
     structurally validated when present (_schema/_audited_at/_tenant_flavor/
     _tenant_root; domain/module rows carry name+path; collections id+dir+shape)
+  - bindings[] (the binding registry): ids unique; region exists on its
+    screen; source is exactly one form; module sources resolve against
+    context.json (fail on unknown module/collection; warn when the index is
+    absent); read-write requires a writable collection AND at least one
+    events[].writes[] writer; writes[] targets resolve, ops valid
   - state/*.json parse; data/*.json carry _source/_derived_at stamps
 
 Exit 0 = GREEN (warnings allowed), 1 = RED, 2 = usage error.
@@ -220,14 +225,15 @@ CONTEXT_FLAVORS = ("holding-folder", "co-located", "canon-author")
 
 def check_context(app):
     """context.json — the AUDIT index (rasa.canvas.context.v1). Warn when
-    absent (audit not yet run); structurally validate when present."""
+    absent (audit not yet run); structurally validate when present.
+    Returns the parsed doc (or None) so check_bindings can resolve against it."""
     p = app / "context.json"
     if not p.is_file():
         warn("context.json: missing — AUDIT not yet run (PROCESSES.md §AUDIT)")
-        return
+        return None
     doc = load_json(p)
     if doc is None:
-        return
+        return None
     if doc.get("_schema") != "rasa.canvas.context.v1":
         fail(f"context.json: _schema '{doc.get('_schema')}' — must be 'rasa.canvas.context.v1'")
     if not doc.get("_audited_at"):
@@ -246,6 +252,91 @@ def check_context(app):
         for c in m.get("collections") or []:
             if not isinstance(c, dict) or not c.get("id") or not c.get("dir") or not c.get("shape"):
                 fail(f"context.json#modules['{m.get('name')}']: collection row without id+dir+shape")
+    return doc
+
+
+WRITE_OPS = ("create-record", "update-record", "move-record", "delete-record")
+
+
+def check_bindings(m, ids, screen_regions, context_doc):
+    """bindings[] — the binding registry (APP_MODEL.md §bindings).
+    Returns {binding id: row} for the writes[] cross-check."""
+    bids = {}
+    for b in m.get("bindings") or []:
+        if not isinstance(b, dict) or not b.get("id"):
+            fail("app.json#bindings: row without an id")
+            continue
+        bid = str(b["id"])
+        if bid in bids:
+            fail(f"app.json#bindings: duplicate binding id '{bid}'")
+        bids[bid] = b
+        scr, reg = b.get("screen"), b.get("region")
+        if scr not in ids:
+            fail(f"app.json#bindings['{bid}']: screen '{scr}' is not a registered screen")
+        elif reg not in screen_regions.get(scr, set()):
+            fail(f"app.json#bindings['{bid}']: region '{reg}' not found on screen '{scr}'")
+        src = b.get("source") or {}
+        forms = [k for k in ("module", "tenant", "context") if src.get(k)]
+        if len(forms) != 1:
+            fail(f"app.json#bindings['{bid}']: source must be exactly one of "
+                 f"module+collection | tenant | context (got: {forms or 'none'})")
+        if src.get("module"):
+            if not src.get("collection"):
+                fail(f"app.json#bindings['{bid}']: module source without a collection")
+            if context_doc is None:
+                warn(f"app.json#bindings['{bid}']: cannot resolve module "
+                     f"'{src['module']}' — context.json absent (run AUDIT)")
+            else:
+                mods = {str(mm.get("name")): mm
+                        for mm in (context_doc.get("modules") or []) if isinstance(mm, dict)}
+                mod = mods.get(str(src["module"]))
+                if mod is None:
+                    fail(f"app.json#bindings['{bid}']: source.module '{src['module']}' "
+                         f"is not in context.json#modules")
+                else:
+                    colls = {str(c.get("id")): c
+                             for c in (mod.get("collections") or []) if isinstance(c, dict)}
+                    cid = str(src.get("collection", "")).split("/")[0]
+                    coll = colls.get(cid)
+                    if coll is None:
+                        fail(f"app.json#bindings['{bid}']: collection '{src.get('collection')}' "
+                             f"is not declared by '{src['module']}' in context.json")
+                    elif b.get("direction") == "read-write" and not coll.get("writable"):
+                        fail(f"app.json#bindings['{bid}']: read-write on a collection "
+                             f"context.json does not mark writable")
+        sel = src.get("select")
+        if sel not in (None, "*"):
+            warn(f"app.json#bindings['{bid}']: select '{sel}' — v1 supports only '*'")
+    return bids
+
+
+def check_writes(m, bids):
+    """events[].writes[] — every target resolves; read-write bindings have a writer."""
+    writers = set()
+    for row in m.get("events") or []:
+        if not isinstance(row, dict):
+            continue
+        a = row.get("action")
+        for w in row.get("writes") or []:
+            if not isinstance(w, dict):
+                fail(f"app.json#events['{a}']: writes[] entry is not an object")
+                continue
+            if w.get("binding"):
+                if str(w["binding"]) not in bids:
+                    fail(f"app.json#events['{a}']: writes[] names unknown binding '{w['binding']}'")
+                else:
+                    writers.add(str(w["binding"]))
+                if w.get("op") not in WRITE_OPS:
+                    fail(f"app.json#events['{a}']: writes[] op '{w.get('op')}' — "
+                         f"must be one of {'|'.join(WRITE_OPS)}")
+            elif w.get("state"):
+                pass  # app-local state write — always legal
+            else:
+                fail(f"app.json#events['{a}']: writes[] entry needs binding+op or state")
+    for bid, b in bids.items():
+        if b.get("direction") == "read-write" and bid not in writers:
+            fail(f"app.json#bindings['{bid}']: read-write but no event writes it "
+                 f"(declare a writes[] entry or make it read)")
 
 
 def check_hygiene(app):
@@ -301,9 +392,11 @@ def main():
 
     emitted = {}   # action -> {screen ids that emit it}
     all_region_ids = set()
+    screen_regions = {}   # screen id -> {region ids on that screen}
     for sid in sorted(set(ids) & set(files)):
         actions, rids = check_screen_file(files[sid], sid, ids)
         all_region_ids |= rids
+        screen_regions[sid] = rids
         for a in actions:
             emitted.setdefault(a, set()).add(sid)
 
@@ -321,7 +414,9 @@ def main():
             if region not in all_region_ids:
                 warn(f"app.json#events['{a}']: emits region '{region}' not found on any screen")
 
-    check_context(app)
+    ctx = check_context(app)
+    bids = check_bindings(m, ids, screen_regions, ctx)
+    check_writes(m, bids)
     check_hygiene(app)
     return report()
 

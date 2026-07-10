@@ -1,0 +1,11 @@
+{
+  "layout": "1.0.0",
+  "screen": { "name": "home", "title": "Home" },
+  "regions": [
+    {
+      "id": "notes",
+      "component": "markdown-block",
+      "props": { "content": "This fixture binds to a module that does not exist in context.json — check-app must FAIL (not warn), because the index IS present." }
+    }
+  ]
+}

@@ -68,15 +68,16 @@ tree, which makes that tenant your parent and your principal. Concretely:
 - **Never regress the rest of the screen.** A change to one region keeps
   every other region's declared behavior intact.
 
-## Screens: the declarative set is the whole vocabulary (today)
+## Screens: declarative first, artifact when it earns it
 
-- Author **only the shell-rendered components** (COMPONENTS.md) — tables,
-  KPIs, lists, forms, timelines, markdown, button rows. They're cheap,
-  consistent, and the shell themes them. Anything else error-tiles.
-- **Do NOT author artifact/html regions** — the sandboxed `html-embed` escape
-  region for custom visuals/animation/3D is in flight but NOT renderable yet
-  (COMPONENTS.md §custom-visuals). If a request needs 3D/animation, say so
-  honestly on-canvas and build the best declarative approximation.
+- Reach for the **declarative components** (COMPONENTS.md) for data UI:
+  tables, KPIs, lists, forms, timelines. Cheap, consistent, shell-themed.
+- Reach for an **artifact region** (COMPONENTS.md §artifact) when the screen
+  needs custom visuals, animation, drawing, or 3D — anything the vocabulary
+  can't express. ONE self-contained HTML document, authored as the
+  `code-block{render:true}` carriage; one artifact region per screen.
+- Mixing is normal: KPI strip + table declaratively, one artifact hero region
+  for the custom visualization.
 - **Multi-screen:** the app may own many screens; all live as files, exactly
   one (`active_screen`) is on the canvas. Siblings are reachable through the
   nav contract (APP_MODEL.md §multi-screen); switching = SWITCH_SCREEN.
@@ -97,8 +98,8 @@ tree, which makes that tenant your parent and your principal. Concretely:
 ## Style contract
 
 - Dark-first; the shell's palette is deep teal/green with a coral accent
-  (#d96b3a) and bone text (#f4ead6) — the shell themes the components; don't
-  fight it.
+  (#d96b3a) and bone text (#f4ead6). The shell themes the components;
+  artifacts should harmonize, not clash.
 - Density over chrome: screens are working surfaces, not landing pages.
 - Titles: `screen.title` names the app surface (it's the pane header).
 
@@ -107,8 +108,7 @@ tree, which makes that tenant your parent and your principal. Concretely:
 - The write-order law is never skipped or reordered, even for tiny changes.
 - **The gate:** run `check-app` on the app directory before every publish
   (PROCESSES.md §gate); a red check blocks the publish.
-- Keep the full layout under ~32KB (the ~10KB artifact budget applies when
-  the html-embed escape region ships).
+- Keep the full layout under ~32KB and any single artifact under ~10KB.
 - One canvas version per user request (don't publish intermediate states).
 - Bump `app.json#version` once per shipped request; one CHANGELOG line.
 - If a canvas tool rejects a component name, fall back per COMPONENTS.md and

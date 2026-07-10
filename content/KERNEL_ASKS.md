@@ -15,16 +15,19 @@ surgical; none block the current session-management model.
    kernel v0.31.0), which forces the shell's bootstrap turn. Auto-vivify would
    remove a whole failure mode.
 3. **SA-027 vocabulary: an artifact region kind** (`html-embed {html, height}`).
-   **CORRECTED 2026-07-09:** the original filing claimed "the shell already
-   renders it sandboxed" — verified FALSE against frontend-rasaos source: the
-   shell has NO artifact/iframe path for canvas content (its only iframe is a
-   same-origin unsandboxed vertical proxy), and `code-block{render:true}`
-   renders as plain text. Nothing renders artifacts today. The full
-   implementable spec is `docs/design/html-embed-spec.md` (this repo). Kernel
-   half of the ask: add `html-embed` to the canvas component allowlist + the
-   published `rasa.layout.v1` schema enum, with a `props.html` maxLength cap
-   (~16KB) and `height` bounds. Shell half filed with frontend-rasaos
-   (`docs/handoff/FRONTEND_RASAOS_GAPS.md`).
+   **RE-VERIFIED 2026-07-09 (HOTFIX-001):** the original claim ("the shell
+   already renders it sandboxed") is **TRUE on frontend-rasaos `main` @
+   `a5f6ff1`** — `components.tsx` ships `HtmlEmbed` serving BOTH the
+   `code-block{render:true}` carriage (`:64-68`) and a direct `html-embed`
+   arm (`:69-70`), with `sandbox="allow-scripts"` + injected CSP
+   (`connect-src 'none'`) + the `window.rasa.emit` bridge. *(An intermediate
+   2026-07-09 correction marked this FALSE — it had read a checkout without
+   `a5f6ff1`; lesson: cross-repo evidence is now SHA-pinned per the
+   done-gate.)* **The remaining ask is kernel-side only:** add `html-embed`
+   to the canvas component allowlist + the published `rasa.layout.v1` schema
+   enum, with a `props.html` maxLength cap (~16KB) and `height` bounds — then
+   the direct form replaces the carriage. Spec: `docs/design/html-embed-spec.md`;
+   see also `docs/handoff/KERNEL_GAPS.md` K1.
 4. **Element-scoped tool policy** — this orchestrator's sessions need
    canvas_* + fs/shell in the app dir; they do NOT need Gmail/web MCPs. The
    manifest declares `permissions`; the kernel should enforce per-element

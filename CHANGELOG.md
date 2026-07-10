@@ -1,5 +1,29 @@
 # Changelog — rasa.orchestrator.canvas
 
+## 0.6.1 — 2026-07-09
+
+**HOTFIX-001: the artifact lane is LIVE — doctrine restored.** v0.6.0's
+truth-pass over-corrected: it forbade artifact regions ("nothing renders
+them") based on a render investigation that read a frontend-rasaos checkout
+WITHOUT commit `a5f6ff1` ("v0.5.0 — canvas-vertical lane + artifact studio",
+authored 2026-07-07 in parallel). Verified against current `main`: the shell
+ships `HtmlEmbed` — `code-block{render:true}` carriage + a direct
+`html-embed` arm, `sandbox="allow-scripts"`, injected CSP (`connect-src
+'none'`, 4 CDNs + unsafe-eval → three.js/WebGL/React work), injected
+`window.rasa.emit` postMessage bridge — independently convergent with
+docs/design/html-embed-spec.md §B. Restored: COMPONENTS.md §artifact (the
+verified, SHA-pinned contract), BUILDER.md "declarative first, artifact when
+it earns it", CLAUDE.md capsule; KERNEL_ASKS #3 re-verified TRUE with full
+history (remaining ask = kernel allowlist/schema enum only, K1). All v0.6.0
+prop-shape + emission-grammar fixes RE-CONFIRMED against `a5f6ff1` — those
+stand. Done-gate doctrine-truth rule gains SHA-pinning for cross-repo
+evidence. Postmortem:
+docs/postmortems/2026-07-09-artifact-lane-overcorrection.md. Cross-repo
+findings sent back via TASK-008: Studio auto-binds the stale
+`rasa.orchestrator.canvas` name (post-SA-023 must be `rasa.domain.canvas`);
+their VerticalCanvasPane bootstraps `.rasaos/apps/<id>` (coordinate before
+any TASK-006 dot-dir migration).
+
 ## 0.6.0 — 2026-07-09
 
 The truth pass + the binding design. The doctrine now matches the verified

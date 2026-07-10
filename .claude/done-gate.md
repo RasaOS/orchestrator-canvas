@@ -21,11 +21,15 @@ Each gate is objectively checkable. Never bypass a gate to ship faster.
       negative fixtures fail. This is also the pre-commit hook
       (`git config core.hooksPath .githooks`) and CI.
 - [ ] **Doctrine-truth rule** — any claim added to `content/` about what the
-      shell, kernel, or canon DOES carries verified evidence (a date + a
-      source file:line or doc anchor). No capability is documented as working
-      that has not been seen working. *(This gate exists because the element
-      shipped an artifact contract the renderer never implemented — found
-      2026-07-09.)*
+      shell, kernel, or canon DOES carries verified evidence: a date + a
+      source file:line or doc anchor, **and for cross-repo claims the source
+      repo's commit SHA** (`git -C <repo> rev-parse HEAD`, recorded alongside
+      the cite). No capability is documented as working that has not been
+      seen working — and none as absent that hasn't been checked against a
+      pinned state. *(This gate exists because doctrine drifted BOTH ways in
+      one day — 2026-07-09: an artifact contract documented against the wrong
+      assumption, then "corrected" against an unpinned checkout that lacked
+      `a5f6ff1`. HOTFIX-001 + postmortem.)*
 - [ ] **Design-doc consistency** — if the task changed `content/`, `schemas/`,
       or `bin/`, the design corpus (`docs/design/*.md`, `BUILD_ORDER.md`) is
       updated in the same commit; the docs never lag the law.

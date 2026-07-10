@@ -63,26 +63,47 @@ action in `app.json#events`:
 - **any non-form region** with `props.on_click`: the whole region is clickable
   and emits `on_click` with `{region_id}`.
 
-## §custom-visuals — 3D / animation (IN FLIGHT — do NOT author artifacts today)
+## §artifact — the escape hatch for custom visuals / animation / 3D
 
-Custom visuals, animation, drawing, and 3D land via a **sandboxed `html-embed`
-escape region** — one self-contained HTML document in a sandboxed iframe with a
-`window.rasa.emit` bridge. **It is not renderable yet** (verified 2026-07-09:
-the shell has no artifact/iframe path; `code-block{render:true}` renders as
-plain text; `media-viewer` never embeds). The implementable spec is
-`docs/design/html-embed-spec.md` in this element's repo; the kernel half is
-KERNEL_ASKS #3 (rewritten), the shell half is filed with frontend-rasaos.
+**LIVE** (verified 2026-07-09 against frontend-rasaos `main` @ `a5f6ff1`,
+`app/src/canvas/components.tsx:64-163`). One region carries a complete
+self-contained HTML document, rendered in a **sandboxed iframe** — opaque
+origin (`allow-scripts` only: no parent DOM, no cookies/storage, no top-nav).
 
-Until it ships:
+**Author it as the carriage** (the kernel-legal form — canvas_set rejects the
+`html-embed` name until the kernel enum lands, KERNEL_ASKS #3):
 
-- Express every screen in the rendered subset above — data UIs (tables, KPIs,
-  lists, forms, timelines) need nothing else.
-- If a request genuinely needs 3D/animation, say so honestly on-canvas (a
-  markdown-block noting the capability is in flight) and build the best
-  declarative approximation. Never emit an artifact region — it error-tiles.
-- When it ships: ONE artifact region per screen, self-contained document
-  ≤ ~10KB (check-app already enforces the caps), CDN-loaded procedural
-  three.js/WebGL works, runtime asset fetches (textures/GLTF/wasm) do not.
+```json
+{ "id": "hero", "component": "code-block",
+  "props": { "code": "<!doctype html>…", "render": true, "height": 460 } }
+```
+
+(`html-embed {html, height}` is the same renderer and becomes the preferred
+form once allowlisted. `height` defaults to 420px.)
+
+The contract (all shell-injected — unspoofable by the document):
+
+- **CSP**: `connect-src 'none'` — scripts run, nothing phones home (no
+  fetch/XHR/WebSocket). `script-src` allows inline + `unsafe-eval` + exactly
+  cdnjs.cloudflare.com · cdn.jsdelivr.net · unpkg.com · esm.sh — so
+  **three.js / D3 / Chart.js / React+JSX work, 3D/WebGL works** (WebGL needs
+  no network). Images/media: `data:`/`blob:` only — remote asset fetches
+  (textures/GLTF/wasm) are blocked; use data-URIs or procedural geometry.
+- **The bridge**: `window.rasa.emit(action, payload)` is predefined and is
+  the ONLY way out — calls arrive here as `[canvas] <action> (<region-id>)`
+  turns. Register every emitted action in `app.json#events` (check-app scans
+  `rasa.emit` calls inside artifacts).
+- **Stateless across versions**: each `canvas_set` fully re-mounts the
+  document. Bake server-truth state INTO the html you publish (e.g.
+  `const SAVES=3`); keep ephemeral UI state (hover, tabs) in the framework.
+- **Budgets**: the authored document rides the layout JSON — keep it ≤ ~10KB
+  (check-app warns >10KB, fails >16KB). CDN libraries load at runtime and
+  don't count.
+- **Rules**: ONE artifact region per screen; reach for it only when the
+  declarative set can't express the screen; prefer a small framework over
+  hand-rolled DOM (preact+htm from esm.sh is the light default; React 18 +
+  Babel-standalone works under `unsafe-eval` when a library needs React).
+  Match the shell palette (deep teal/green, coral `#d96b3a`, bone `#f4ead6`).
 
 ## Versioning
 

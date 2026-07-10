@@ -110,8 +110,45 @@ relay, response tracking, and folding verified outcomes back into `content/`
   `frontend-rasaos/docs/handoff-domain-canvas-gaps.md`, each with a
   delivery header pointing at the canonical source in this repo. Neither
   repo's task registry was touched (their sessions own their IDs).
-- Outcome table (fill as responses land): K1 ☐ · K2 ☐ · K3 ☐ · F1 ☐ · F2 ☐ ·
-  F3 ☐ · F4 ☐.
+- **2026-07-09 — frontend-rasaos "wrote back"** (surfaced by the user): their
+  checkout now sits on `main` at/past commit `a5f6ff1` ("v0.5.0 — the
+  canvas-vertical lane + artifact studio + durable canvas store", authored
+  2026-07-07 — PARALLEL work, predating our handoff). Verified directly
+  against the current tree (`app/src/canvas/components.tsx`):
+  - **F1 (html-embed) — effectively DONE, pre-existing**: an `HtmlEmbed`
+    component renders BOTH `code-block{render:true}` (the kernel-legal
+    carriage, `:64-68`) AND a direct `html-embed` arm (`:69-70`, pending
+    kernel allowlist = K1). `sandbox="allow-scripts"`, srcDoc, injected CSP
+    (`connect-src 'none'`, 4 CDNs + unsafe-eval, `:109-113`), injected
+    `window.rasa.emit` postMessage bridge with `e.source` +
+    `__rasa:1` envelope checks (`:136-141`), `height` default 420. Matches
+    our html-embed-spec §B almost exactly (minor CSP deltas: style-src lacks
+    esm.sh; no base-uri/form-action).
+  - **F2 — RESOLVED by code-read**: button-row emits `intent || 'on_click'`
+    `{button_id}` (`:429`) ✓; card-list emits LITERAL `'on_card_click'`
+    `{card_index,title}` on prop presence (`:259`) ✓; form emits `'on_submit'`
+    `{<id>:value}` (`:287`) ✓; enclosing region-level `on_click` confirmed by
+    the stopPropagation comment (`:258`).
+  - **All truth-pass prop shapes CONFIRMED against current main**:
+    markdown-block `{content}` (`:407`), card `{title,subtitle}`, chart
+    `{data}` bars-only, timeline `{events}`, media-viewer link-only, table
+    dual shapes. Golden-app + check-app grammar fixes stand.
+  - **⚠ OVER-CORRECTION FOUND**: our truth-pass claim "no artifact path
+    exists" is FALSE for current main — the earlier render investigation read
+    a different checkout state (uncited SHA — the lesson: pin `git rev-parse
+    HEAD` in all cross-repo evidence). COMPONENTS §custom-visuals /
+    BUILDER "do NOT author artifacts" / KERNEL_ASKS #3 "verified FALSE"
+    correction all need re-correction → **HOTFIX-001 proposed**.
+  - **Findings to send BACK to frontend team**: (1) Studio auto-binds
+    `rasa.orchestrator.canvas` — STALE post-SA-023 name; must become
+    `rasa.domain.canvas` (or honor the alias). (2) Their
+    `VerticalCanvasPane` bootstraps cwd `.rasaos/apps/<id>` — coordinate
+    before any TASK-006 dot-dir migration.
+  - Also aligned independently: their "durable canvas store" hardening = our
+    ask #6 workaround; they filed revert + history asks = our #7/#8.
+- Outcome table: K1 ☐ (still needed — kernel enum for direct `html-embed`) ·
+  K2 ☐ · K3 ☐ · **F1 ✅** (pre-existing in `a5f6ff1`; carriage live today) ·
+  **F2 ✅** (resolved by direct code-read of current main) · F3 ☐ · F4 ☐.
 
 ## Self-review checklist
 

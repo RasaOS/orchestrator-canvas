@@ -74,7 +74,7 @@ Two governing principles (professional-engineering directives):
 | Layer | Engine we use | Rejected alternative | Status |
 |---|---|---|---|
 | **UI / render** | the **frozen declarative component set** (11 today → 18–21 canon), styled by Brand-Kit tokens; absolute `frame` for dashboards | hand-rolled HTML / sandboxed artifacts (absent in shell **and** anti-canon §2.1) | 11 buildable now |
-| **Custom visuals / 3D & animation** | a **sandboxed `html-embed` component** (three.js/WebGL/`<canvas>`/CSS-anim inside, `postMessage`→`window.rasa.emit` bridge) — a **priority** kernel+shell+canon capability (§2.1) | authoring `code-block{render:true}` (renders as **text**, not HTML) | **priority ask** — not built yet; path is short |
+| **Custom visuals / 3D & animation** | the **sandboxed artifact lane** — `HtmlEmbed` via the `code-block{render:true}` carriage (three.js/WebGL/CSS-anim, `window.rasa.emit` bridge) — **LIVE in the shell** (frontend-rasaos @ `a5f6ff1`; HOTFIX-001 restored the doctrine) | hand-rolled DOM; waiting for "someday" | **available today**; direct `html-embed` name pends kernel enum (K1) |
 | **Data / storage** | the **record-modules** (`module-research/tasks/notes/…`) + kernel `PUT /v1/fs` | a canvas-owned datastore / Redis-as-truth | buildable now |
 | **Data binding** | the **binding registry** (`app.json#bindings[]`) + `context.json` audit — see `binding-model.md` | ad-hoc per-screen `data_sources` | design-stage |
 | **Reactivity** | kernel **SSE** `/v1/canvas/{id}/watch` (client already robust); file-event→canvas bridge for external change | client polling / websockets (shell has neither; SSE only) | push done; bridge = ask #11 |
@@ -84,6 +84,17 @@ Two governing principles (professional-engineering directives):
 | **Identity / positioning** | `domain` kind, `conversational-canvas` profile, authors layouts a frontend renders | acting as a `frontend` image | re-role pending |
 
 ### 2.1 3D / animation / custom visuals — a priority capability on a real path
+
+> **⚡ SUPERSEDED IN THE HAPPIEST DIRECTION (2026-07-09, HOTFIX-001):** the
+> capability turned out to be **already built** — frontend-rasaos `main` @
+> `a5f6ff1` (authored 2026-07-07, in parallel) ships the artifact lane
+> exactly as §2.1a specs it, served via the `code-block{render:true}`
+> carriage today. The render investigation that found it "absent" had read a
+> checkout without that commit (hence the SHA-pinning rule now in the
+> done-gate). Point (i)'s doctrine correction was re-reversed by HOTFIX-001:
+> COMPONENTS.md §artifact now documents the live, verified contract. Point
+> (ii)'s remaining work is **kernel-side only** (K1: allowlist + schema enum)
+> plus the canon admission (FE-022). The text below is kept for the record.
 
 **3D and animation in a page are a core product requirement (user, 2026-07-09).** They are
 delivered by a **sandboxed `html-embed` region**: one component that renders a
@@ -353,9 +364,11 @@ canon-workspace task, not element code.
   confirmed (`bg #082a23`, `accent #d96b3a`, `text #f4ead6`); fonts Fraunces/Inter/JetBrains
   Mono via Google Fonts CDN (`index.html:8-11`). **No `:root` CSS variables** — tokens not
   inheritable by any embedded HTML. IMPLEMENTED (shell) / ABSENT (inheritable layer).
-- **A5 — Artifacts.** No iframe/sandbox/srcdoc/`window.rasa`/CSP/`html-embed`/`render:true`
-  path for canvas content (grep across `src/`). `code-block`→`<pre>` text; `media-viewer`→
-  safe link; `markdown-block`→HTML-escaped subset (`src/canvas/markdown.ts`). ABSENT.
+- **A5 — Artifacts.** ⚠ SUPERSEDED (read from a checkout WITHOUT `a5f6ff1` — the
+  unpinned-SHA lesson): current frontend-rasaos `main` ships the full artifact lane
+  (`HtmlEmbed`, carriage + direct arm, sandbox + CSP + bridge — see html-embed-spec.md
+  status header). `media-viewer` link-only and `markdown-block` escaping remain accurate.
+  Was: ABSENT → **IS: IMPLEMENTED** (kernel enum pending).
 - **A6 — Real-time.** Command stream (`ConversationProvider.tsx:314-318`) + watch stream
   `GET /v1/canvas/{id}/watch` via `EventSource` (`CanvasProvider.tsx:132-136`); version dedup
   + gap re-snapshot (`:102-124`, `CanvasClient.ts:37-48`); out via `POST /v1/commands`

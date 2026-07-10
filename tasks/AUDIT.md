@@ -5,6 +5,15 @@ Curated, append-only record of meaningful project actions (per
 
 ## 2026-07-09
 
+- 🔥 **HOTFIX-001 shipped** — restored the artifact-lane doctrine: v0.6.0 had
+  forbidden a working capability (frontend-rasaos @ `a5f6ff1` ships the full
+  sandboxed artifact lane; the "absent" verdict came from an unpinned
+  checkout). Receipt: tag v0.6.1.
+  Postmortem: docs/postmortems/2026-07-09-artifact-lane-overcorrection.md.
+- ⚠ **Postmortem: artifact-lane over-correction** — root cause: cross-repo
+  verification against an unpinned checkout state; prevention: SHA-pinning
+  rule added to the done-gate's doctrine-truth gate; F3 (component manifest)
+  urgency raised. docs/postmortems/2026-07-09-artifact-lane-overcorrection.md.
 - 📦 **TASK-001 shipped** — the truth-pass + design corpus + task system,
   released as **v0.6.0** (tag on the merge-with-main commit so the release
   contains main's v0.5.1/v0.5.2). Receipt: tag `v0.6.0`.

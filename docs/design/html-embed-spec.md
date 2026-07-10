@@ -1,7 +1,21 @@
 # Design — the `html-embed` escape region (3D / animation / custom visuals)
 
-**Status:** DRAFT / reviewable spec. Grounded 2026-07-09 against frontend-rasaos source,
-canon triage, and the published layout schema (citations inline).
+**Status:** ⚡ **SHELL HALF IMPLEMENTED** (discovered 2026-07-09, HOTFIX-001):
+frontend-rasaos `main` @ `a5f6ff1` ships `HtmlEmbed` in
+`app/src/canvas/components.tsx` — the `code-block{render:true}` carriage
+(`:64-68`) AND a direct `html-embed` arm (`:69-70`), `sandbox="allow-scripts"`
++ srcDoc, injected CSP with `connect-src 'none'` (`:109-113`), injected
+`window.rasa.emit` bridge with `e.source` + `__rasa:1` checks (`:136-141`),
+`height` default 420 — **independently convergent with §B of this spec.**
+Deltas from §B: their `style-src` omits esm.sh + fonts.googleapis; no
+`base-uri`/`form-action` directives; `media-src data: blob:` added; empty
+document → warn tile. **Remaining change-set: kernel K1 (allowlist + schema
+enum + maxLength) and the canon task (§C items 5–6, FE-022).** §A's "reality"
+findings described a pre-`a5f6ff1` checkout state — superseded for the shell,
+still accurate for canon + kernel.
+
+*(Original grounding below, 2026-07-09, against frontend-rasaos source, canon
+triage, and the published layout schema — citations inline.)*
 **Parent:** `docs/design/ui-engine-and-architecture.md` §2.1/§2.1a.
 **Why:** 3D + animation in pages is a hard product requirement. This is the single
 sandboxed escape region that delivers it — specified precisely enough to implement.

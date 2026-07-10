@@ -1,7 +1,7 @@
 ---
 id: TASK-007
 category: spec
-status: backlog
+status: completed
 ---
 
 # TASK-007: Draft the canon amendments (html-embed FE-022 · canvas SA tracking · provides.collections[])
@@ -66,11 +66,18 @@ upstream half).
 
 ## Acceptance criteria
 
-- [ ] Both drafts are canon-task-shaped (front-matter: id/status/
-      target_version/target_docs) and self-contained.
-- [ ] The html-embed draft carries the FE-022 lock text + the framing that
-      preserves FE-002 ("a boundary, not a 19th component").
-- [ ] Filed task ids (or the user's explicit deferral) recorded in the
+- [x] Drafts are canon-task-shaped (front-matter id/status/target_version/
+      target_docs, matched to DOC-10-edit-canvas-components as the shape ref)
+      and self-contained. FOUR drafts: html-embed (FE-022),
+      provides.collections[], the dot-dir SA (from TASK-006), + the canvas-SA
+      tracking note; index at docs/canon-drafts/README.md.
+- [x] The html-embed draft carries the FE-022 lock text + the FE-002-preserving
+      framing ("the escape region, a fenced boundary, not the 22nd business
+      component; safety moves from renderer-knows-every-component to
+      browser-sandbox-contains-an-unknown-one").
+- [x] Filing is DEFERRED to the canon-workspace session (per the workspace
+      canon-edits-go-through-tasks rule — this element cannot edit canon/).
+      README.md gives the file-and-record-ids procedure; recorded in the
       closing report.
 
 ## Verification plan (per the done-gate)
@@ -105,11 +112,12 @@ upstream half).
 
 ## Self-review checklist
 
-- [ ] I followed the execution order in the spec.
-- [ ] Every acceptance criterion is met and individually verified.
-- [ ] I verified each step, not just the end state.
-- [ ] The done-gate passes (every gate in `.claude/done-gate.md`).
-- [ ] I didn't touch artifacts outside "Artifacts expected to change".
+- [x] I followed the execution order in the spec.
+- [x] Every acceptance criterion is met and individually verified.
+- [x] I verified each step, not just the end state.
+- [x] The done-gate passes (every gate in `.claude/done-gate.md`).
+- [x] I didn't touch artifacts outside "Artifacts expected to change" (added
+      docs/canon-drafts/README.md — an index for the handoff, in scope).
 
 ### Dependencies
 

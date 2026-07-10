@@ -5,6 +5,15 @@ Curated, append-only record of meaningful project actions (per
 
 ## 2026-07-09
 
+- 📦 **TASK-007 shipped** — canon drafts authored (docs/canon-drafts/):
+  DOC-10-edit-html-embed-escape-region (FE-022), SA-0XX-module-collections-
+  declaration (provides.collections[] + write_via), + the canvas-SA tracking
+  note; README indexes all four (incl. TASK-006's dot-dir SA) with the
+  file-from-canon-session procedure. Filing DEFERRED to the canon-workspace
+  session (element can't edit canon/). Docs-only.
+- 🏗 **Phase 1 "The binding brain" COMPLETE** — all element-side tasks
+  shipped (TASK-001..007 + HOTFIX-001); TASK-008 remains blocked on external
+  teams. Requirements #1-4 built + enforced. Elements v0.6.0 → v0.10.0.
 - 📦 **TASK-005 shipped** — the three binding modes (bound / derived /
   provision-then-bind) folded into BUILDER §binding-modes + PROCESSES
   (BUILD mode-resolution step, ADD_SCREEN bindings, RETIRE provisioned-records

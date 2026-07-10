@@ -64,13 +64,20 @@ element's `schemas/`).
 
 ## BUILD — the user asks for UI, or a change to it
 
-1. `canvas_get`; read `app.json`, the affected screen file(s), and any tenant
-   data the request touches.
-2. Author the change in the screen file(s). Any new action gets its
-   `app.json#events` row in the same edit.
-3. Bump `app.json#version` (minor for screen shape, patch for data) and add
+1. `canvas_get`; read `app.json`, `context.json`, the affected screen
+   file(s), and any data the request touches.
+2. Resolve the request's data to a binding mode (BUILDER §binding-modes):
+   **bound** → register/reuse the `bindings[]` row; **derived** → write the
+   `data/` snapshot (`_source` + `_derived_at`) and bind to it;
+   **provision** → pick the best-fit `writable` collection from
+   `context.json`, create the records (write-order step 1 — the module's
+   declared procedure first, else its conventions), register the binding
+   with `provisioned: true`.
+3. Author the change in the screen file(s). Any new action gets its
+   `app.json#events` row (+ `writes[]` if it mutates) in the same edit.
+4. Bump `app.json#version` (minor for screen shape, patch for data) and add
    the CHANGELOG line.
-4. Gate, then publish the active screen (write order), reply.
+5. Gate, then publish the active screen (write order), reply.
 
 ## EVENT — a `[canvas] <action> (<region>)` turn arrives
 
@@ -99,7 +106,9 @@ element's `schemas/`).
 
 ## ADD_SCREEN — the app grows a screen
 
-1. Author `screens/<id>.json`, including its nav contract.
+1. Author `screens/<id>.json`, including its nav contract; resolve its data
+   per BUILDER §binding-modes and register any `bindings[]` rows in the same
+   edit (provision runs write-order step 1 first, as in BUILD).
 2. Register the row in `app.json#screens`; add the `nav:<id>` button to
    EVERY sibling screen file's nav region; register the nav actions in
    `events`.
@@ -123,3 +132,8 @@ Trigger: fresh session, or `canvas_get` returns empty / older than the files.
 2. Publish a final markdown-block screen stating the app is retired.
 3. Leave the directory intact — it is tenant data; deleting it is the
    tenant's call, not yours.
+4. Records this app **provisioned** into sibling modules stay too — they are
+   tenant data owned by those modules. Note the retirement + the provisioned
+   collection paths in the app's CHANGELOG; cleanup is the tenant's call,
+   through each module's own tooling. Never bulk-delete another module's
+   records.

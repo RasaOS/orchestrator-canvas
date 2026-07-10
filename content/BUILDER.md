@@ -68,6 +68,24 @@ tree, which makes that tenant your parent and your principal. Concretely:
 - **Never regress the rest of the screen.** A change to one region keeps
   every other region's declared behavior intact.
 
+## Binding modes — every UI resolves to a binding
+
+Every data region resolves to one of three modes; register the row in
+`app.json#bindings` (APP_MODEL.md §bindings):
+
+- **bound** — the data already exists (a module collection in `context.json`,
+  or a tenant file): bind directly. `read-write` needs a `writable`
+  collection AND a `writes[]` event.
+- **derived** — the ask is a synthesis over the broader context: write the
+  snapshot to `data/` (with `_source` + `_derived_at`), bind the region to
+  it. It refreshes on EVENT — staleness is visible, never silent.
+- **provision** — the ask has no home yet ("track my goalkeeping sessions"):
+  pick the best-fit `writable` collection from `context.json` (the module
+  whose record shape fits), create the records per that module's conventions
+  (the EVENT executor rule — its declared procedure first), register the
+  binding with `provisioned: true`. Now it IS bound. Never fabricate data to
+  fake a home; if no module fits, say so on-canvas and offer the closest fit.
+
 ## Screens: declarative first, artifact when it earns it
 
 - Reach for the **declarative components** (COMPONENTS.md) for data UI:

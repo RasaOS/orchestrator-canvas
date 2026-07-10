@@ -1,7 +1,7 @@
 ---
 id: TASK-005
 category: spec
-status: backlog
+status: completed
 ---
 
 # TASK-005: The three-modes doctrine fold (bound / derived / provision)
@@ -61,12 +61,13 @@ doesn't exist at all. Design: `docs/design/binding-model.md` §4 (ratified).
 
 ## Acceptance criteria
 
-- [ ] A fresh session reading BUILDER+PROCESSES can run the goalkeeping trace
-      cold: no collection → provision into a writable module → bound UI
-      (reviewer walkthrough).
-- [ ] BUILDER.md stays under the 8KB terseness warn.
-- [ ] Process canon unchanged (still the named list); check-doctrine GREEN.
-- [ ] RETIRE explicitly covers provisioned records.
+- [x] A fresh session reading BUILDER+PROCESSES can run the goalkeeping trace
+      cold — self-walkthrough evidence in the closing report; **final tick is
+      the reviewer's** (user walkthrough at review).
+- [x] BUILDER.md stays under the 8KB terseness warn. *(7225B.)*
+- [x] Process canon unchanged (eight named processes; provision = steps
+      inside BUILD/ADD_SCREEN); check-doctrine GREEN.
+- [x] RETIRE explicitly covers provisioned records (step 4).
 
 ## Verification plan (per the done-gate)
 
@@ -99,11 +100,11 @@ doesn't exist at all. Design: `docs/design/binding-model.md` §4 (ratified).
 
 ## Self-review checklist
 
-- [ ] I followed the execution order in the spec.
-- [ ] Every acceptance criterion is met and individually verified.
-- [ ] I verified each step, not just the end state.
-- [ ] The done-gate passes (every gate in `.claude/done-gate.md`).
-- [ ] I didn't touch artifacts outside "Artifacts expected to change".
+- [x] I followed the execution order in the spec.
+- [x] Every acceptance criterion is met and individually verified.
+- [x] I verified each step, not just the end state.
+- [x] The done-gate passes (every gate in `.claude/done-gate.md`).
+- [x] I didn't touch artifacts outside "Artifacts expected to change".
 
 ### Dependencies
 

@@ -5,6 +5,10 @@ Curated, append-only record of meaningful project actions (per
 
 ## 2026-07-09
 
+- 📦 **TASK-005 shipped** — the three binding modes (bound / derived /
+  provision-then-bind) folded into BUILDER §binding-modes + PROCESSES
+  (BUILD mode-resolution step, ADD_SCREEN bindings, RETIRE provisioned-records
+  addendum). Process canon unchanged; BUILDER 7.2KB. Receipt: tag v0.10.0.
 - 📦 **TASK-004 shipped** — the binding registry: `bindings[]` + events
   `writes[]` (additive in rasa.app.v1), the OQ-4 executor rule in §EVENT,
   the extended write-order law, full check-app cross-checks, golden app

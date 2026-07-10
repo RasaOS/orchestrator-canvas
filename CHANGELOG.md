@@ -1,5 +1,25 @@
 # Changelog — rasa.domain.canvas
 
+## 0.10.0 — 2026-07-09
+
+**The three binding modes land (TASK-005) — provision-then-bind is doctrine.**
+BUILDER gains §binding-modes: every data region resolves to **bound** (the
+data exists — bind directly; read-write needs writable + a writer),
+**derived** (synthesis over the broader context — snapshot to `data/` with
+`_source`/`_derived_at`, bind to the snapshot, staleness visible), or
+**provision** (the ask has no home yet — pick the best-fit `writable`
+collection from `context.json`, create the records per that module's declared
+procedure/conventions, register the binding `provisioned: true` — now it IS
+bound; never fabricate a fake home). PROCESSES: BUILD gains the
+mode-resolution step (provision runs write-order step 1 first); ADD_SCREEN
+registers its bindings in the same edit; RETIRE explicitly leaves provisioned
+records intact (tenant data owned by their modules — noted in the app
+CHANGELOG, never bulk-deleted). Process canon unchanged (eight named
+processes — provision is steps inside BUILD/ADD_SCREEN, not a ninth).
+BUILDER at 7.2KB, under the terseness budget. The user's founding trace
+("create a goalkeeping session about X and Y") now runs cold from
+BUILDER + PROCESSES + the context index + the binding registry.
+
 ## 0.9.0 — 2026-07-09
 
 **The binding registry lands (TASK-004) — requirement #2's foundation.**

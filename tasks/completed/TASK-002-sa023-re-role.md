@@ -1,7 +1,7 @@
 ---
 id: TASK-002
 category: spec
-status: backlog
+status: completed
 ---
 
 # TASK-002: Finish the SA-023 re-role — domain identity everywhere
@@ -65,12 +65,19 @@ speak orchestrator. Contradictory self-description is identity drift.
 
 ## Acceptance criteria
 
-- [ ] `grep -ri "orchestrator" CLAUDE.md README.md rasa.json` returns only
+- [x] `grep -ri "orchestrator" CLAUDE.md README.md rasa.json` returns only
       historical/canon references (SA-023 mentions), no self-description.
-- [ ] `rasa.json#rasa.session_model` keys on `element=rasa.domain.canvas`.
-- [ ] `contract_version` == `1.4.0`; workspace session notified (note in the
+      *(Verified: single hit = CLAUDE.md:7 "per SA-023 the tenant is the
+      orchestrator" — the canon reference itself.)*
+- [x] `rasa.json#rasa.session_model` keys on `element=rasa.domain.canvas`.
+- [x] `contract_version` == `1.4.0`; workspace session notified (note in the
       closing report).
-- [ ] check-doctrine GREEN; version plumbing consistent at 0.7.0.
+- [x] check-doctrine GREEN; version plumbing consistent at 0.7.0.
+
+**Scope addition (mid-task, per scope-discipline rule):**
+`content/KERNEL_ASKS.md` (header + ask #4 said "this orchestrator" —
+self-description living in content/; the acceptance grep didn't cover
+content/, the re-role's intent does). Both fixed; content/ sweep now clean.
 
 ## Verification plan (per the done-gate)
 
@@ -104,11 +111,13 @@ speak orchestrator. Contradictory self-description is identity drift.
 
 ## Self-review checklist
 
-- [ ] I followed the execution order in the spec.
-- [ ] Every acceptance criterion is met and individually verified.
-- [ ] I verified each step, not just the end state.
-- [ ] The done-gate passes (every gate in `.claude/done-gate.md`).
-- [ ] I didn't touch artifacts outside "Artifacts expected to change".
+- [x] I followed the execution order in the spec.
+- [x] Every acceptance criterion is met and individually verified.
+- [x] I verified each step, not just the end state.
+- [x] The done-gate passes (every gate in `.claude/done-gate.md`).
+- [x] I didn't touch artifacts outside "Artifacts expected to change" (the
+      one addition — content/KERNEL_ASKS.md — was recorded with justification
+      before changing it).
 
 ### Dependencies
 

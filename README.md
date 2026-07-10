@@ -1,6 +1,6 @@
-# rasa.orchestrator.canvas
+# rasa.domain.canvas
 
-The **vertical-builder orchestrator**: the runtime brain behind RasaOS canvas
+The **vertical-builder domain**: the runtime brain behind RasaOS canvas
 apps ("Studio" verticals). Its sessions author each app's UI as a kernel
 canvas (`rasa.layout.v1` + sandboxed html artifacts), persist app state in the
 app's own workspace directory, and handle the app's interactions (`ui_event`
@@ -22,6 +22,6 @@ turns) — publishing a new canvas version is shipping the app.
   golden reference app; `examples/fixtures/*` must fail.
 
 Session model: one app = one session, keyed
-`(element=rasa.orchestrator.canvas, cwd=<tenant>/.rasaos/apps/<app-id>)`.
+`(element=rasa.domain.canvas, cwd=<tenant>/.rasaos/apps/<app-id>)`.
 The app directory is the source of truth (`app.json` + `screens/` + `state/`);
 the canvas is a projection of the active screen.

@@ -1,4 +1,23 @@
-# Changelog — rasa.orchestrator.canvas
+# Changelog — rasa.domain.canvas
+
+## 0.7.0 — 2026-07-09
+
+**The SA-023 re-role lands (TASK-002) — domain identity everywhere.** The
+v0.5.0 fold renamed only `rasa.json#name/#kind`; every other identity surface
+still said "orchestrator." Now: CLAUDE.md (title + opener re-framed — per
+SA-023 the tenant is the orchestrator via `rasa.tenant.core`; this element is
+a domain that installs alongside sibling domains + modules, its sessions the
+runtime brain of each canvas app), README.md (title + opener + session key),
+this CHANGELOG's title, `rasa.json` prose (`session_model` keys on
+`element=rasa.domain.canvas`; `tenant_model` composition target
+`domain.canvas (how)`; scaffold description), and `content/KERNEL_ASKS.md`
+headers (added to the task's artifact list mid-flight with justification —
+self-description in content/). **`contract_version` 1.3.0 → 1.4.0** (SA-023
+is a v1.4.0 amendment; the published schema already dropped `orchestrator` —
+resolved OQ-5: flagged to the orchestrator-workspace session as the roster's
+first 1.4.0 declarer, coordinate at the next conformance sweep). Historical
+references (older CHANGELOG entries, canon SA citations) intentionally
+preserved.
 
 ## 0.6.1 — 2026-07-09
 

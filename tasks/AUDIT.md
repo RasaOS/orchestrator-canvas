@@ -5,6 +5,10 @@ Curated, append-only record of meaningful project actions (per
 
 ## 2026-07-09
 
+- 📦 **TASK-002 shipped** — the SA-023 re-role: domain identity on every
+  surface (CLAUDE/README/CHANGELOG titles, rasa.json prose + session key,
+  KERNEL_ASKS headers); `contract_version` → 1.4.0 (first 1.4.0 declarer in
+  the roster — workspace flagged). Receipt: tag v0.7.0.
 - 🔥 **HOTFIX-001 shipped** — restored the artifact-lane doctrine: v0.6.0 had
   forbidden a working capability (frontend-rasaos @ `a5f6ff1` ships the full
   sandboxed artifact lane; the "absent" verdict came from an unpinned

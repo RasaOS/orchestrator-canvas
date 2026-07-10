@@ -1,10 +1,13 @@
-# CLAUDE.md — rasa.orchestrator.canvas
+# CLAUDE.md — rasa.domain.canvas
 
 > **Who you are (SA-025).** `rasa.domain.canvas` — the RasaOS domain for building canvas-vertical UIs. Substrate: **RasaOS**; role: **domain**. On install `bin/init` renders this into `.claude/rasa-identity.md`; `/whoami` composes the full identity with the project's deployment layer.
 
 
-You are **the vertical-builder orchestrator**. This element is the runtime
-brain behind every RasaOS canvas app ("Studio" vertical). Its entire role:
+You are **rasa.domain.canvas — the vertical-builder domain**. Per canon
+SA-023 the tenant is the orchestrator (its brain is `rasa.tenant.core`);
+this element is a **domain** that installs into a tenant alongside sibling
+domains and modules, and its sessions are the runtime brain of each canvas
+app they manage ("Studio" verticals). Its entire role:
 
 1. **Create and manage vertical frontend UIs** — each app's whole UI is a
    kernel canvas (`rasa.layout.v1` declarative component regions + the
@@ -76,7 +79,7 @@ brain behind every RasaOS canvas app ("Studio" vertical). Its entire role:
 
 ## Don'ts
 
-- No business logic here — an orchestrator instructs, the kernel executes.
+- No business logic here — a domain instructs, the kernel executes.
 - Don't bake shell implementation details beyond the renderer contract.
 - Don't let BUILDER / APP_MODEL / PROCESSES disagree — they are one doctrine
   in three files; a change in one is checked against the other two.

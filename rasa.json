@@ -1,8 +1,8 @@
 {
   "$schema": "https://rasa-os.github.io/schema/rasa.schema.v1.json",
-  "contract_version": "1.3.0",
+  "contract_version": "1.4.0",
   "name": "rasa.domain.canvas",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "kind": "domain",
   "description": "The vertical-builder domain: authors and maintains canvas-vertical UIs (rasa.layout.v1 documents + sandboxed html artifacts) conversationally. Each app it manages is a session keyed by its own workspace directory; the domain bootstraps that directory, owns the app's canvas, handles ui_event interactions as the app's runtime brain, and keeps the screens honest to the component contract in content/.",
   "source": {
@@ -22,8 +22,8 @@
   },
   "rasa": {
     "role": "domain-element",
-    "tenant_model": "The element definition is tenant-agnostic (the species); its INSTANCES are tenant-resident: sessions run with cwd inside a tenant's tree, so the tenant is the parent context (its CLAUDE.md/files/data in scope, kernel stamps tenant identity) and every app it manages is one of that tenant's UI surfaces. Composition target: tenant (where) x domain.* (about) x orchestrator.canvas (how).",
-    "session_model": "one app = one session, keyed (element=rasa.orchestrator.canvas, cwd=<tenant>/.rasaos/apps/<app-id>). The app directory is bootstrapped by this orchestrator on first contact and doubles as the app's persistent store, inside the tenant's own tree.",
+    "tenant_model": "The element definition is tenant-agnostic (the species); its INSTANCES are tenant-resident: sessions run with cwd inside a tenant's tree, so the tenant is the parent context (its CLAUDE.md/files/data in scope, kernel stamps tenant identity) and every app it manages is one of that tenant's UI surfaces. Composition target: tenant (where) x domain.* (about) x domain.canvas (how).",
+    "session_model": "one app = one session, keyed (element=rasa.domain.canvas, cwd=<tenant>/.rasaos/apps/<app-id>). The app directory is bootstrapped by this domain on first contact and doubles as the app's persistent store, inside the tenant's own tree.",
     "app_model": "files are truth, the canvas is a projection. content/APP_MODEL.md defines the app directory exactly (app.json manifest with exhaustive screens[] + events[] registries, screens/ one layout file per screen, state/, per-app CHANGELOG) plus the write-order law (screen file -> app.json -> canvas_set) and three-clock versioning; content/PROCESSES.md defines the named procedures every turn runs (BOOTSTRAP, BUILD, EVENT, SWITCH_SCREEN, ADD_SCREEN, REBUILD, RETIRE). Enforcement: schemas/rasa.app.v1.schema.json publishes the manifest contract, bin/check-app audits an app directory and gates every publish (PROCESSES.md gate), bin/check-doctrine keeps the doctrine files in lockstep and gates every commit.",
     "canvas_model": "one canvas per app session (kernel keys canvases by session until args.canvas_id lands — see kernel asks in content/KERNEL_ASKS.md). The app may own MANY screens as files; exactly one (app.json#active_screen) is projected onto the canvas, siblings reachable via the button-row nav contract (nav:<screen-id>). The file model maps 1:1 onto named canvases when args.canvas_id ships.",
     "note": "The renderer contract lives with the shell (frontend-rasaos, SA-026/027/028); this element carries the AUTHORING doctrine. Keep the two in lockstep via content/COMPONENTS.md.",
@@ -67,7 +67,7 @@
     ]
   },
   "scaffold": {
-    "description": "No install scaffold — this orchestrator operates in-session.",
+    "description": "No scaffold directories — this domain operates in-session; its install surface is element.files[] + seed.files[] (identity layer + sync/promote skills).",
     "directories": []
   },
   "aliases": [

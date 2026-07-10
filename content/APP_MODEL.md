@@ -9,6 +9,7 @@ session that reads it can take over any app cold — no archaeology, no asking.
 ```
 <tenant>/.rasaos/apps/<app-id>/
 ├── app.json          # the manifest — identity, screens, events, version (spec below)
+├── context.json      # the audit index — what exists to bind to (per-install, disposable)
 ├── CHANGELOG.md      # one line per shipped change, newest first
 ├── screens/          # one rasa.layout.v1 document per screen
 │   └── <screen-id>.json
@@ -26,6 +27,22 @@ session that reads it can take over any app cold — no archaeology, no asking.
 - `data/` holds derived views (a parsed CSV, an aggregation). Tenant files
   stay the source; derived views are disposable and carry `_source` +
   `_derived_at` fields so staleness is visible.
+
+## The context index — context.json
+
+Written by the AUDIT process (PROCESSES.md): the per-install registry of what
+exists to bind to — the tenant flavor, sibling domains + modules, each
+module's collections (dir, record shape, per-field types, states, writable),
+and tenant data files. Published schema: `rasa.canvas.context.v1`
+(`schemas/rasa.canvas.context.v1.schema.json` in this element's repo).
+
+- **Per-install, discovered, disposable** — re-derivable by re-running AUDIT;
+  nothing from it is ever baked into the element (`content/` stays generic).
+- **Staleness:** BOOTSTRAP always re-audits; any turn whose binding/data
+  target fails to resolve re-audits before erroring; `_audited_at` is
+  advisory — re-audit when the roster looks newer than the index.
+- **The index plans; files decide.** Re-read sources before any publish;
+  the index is a map, never the territory.
 
 ## app.json — the manifest
 

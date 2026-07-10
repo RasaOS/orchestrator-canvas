@@ -5,7 +5,7 @@ Usage: check-doctrine
 
 Checks:
   - the five content/ files exist
-  - PROCESSES.md defines exactly the seven canonical processes; BUILDER.md
+  - PROCESSES.md defines exactly the eight canonical processes; BUILDER.md
     and CLAUDE.md mention every one of them
   - COMPONENTS.md component lists parse; rendered subset is a subset of the
     kernel allowlist; bin/_contract.py matches COMPONENTS.md exactly
@@ -28,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _contract import KERNEL_ALLOWLIST, SHELL_RENDERED
 
 ROOT = Path(__file__).resolve().parent.parent
-PROCESSES = ["BOOTSTRAP", "BUILD", "EVENT", "SWITCH_SCREEN", "ADD_SCREEN", "REBUILD", "RETIRE"]
+PROCESSES = ["BOOTSTRAP", "AUDIT", "BUILD", "EVENT", "SWITCH_SCREEN", "ADD_SCREEN", "REBUILD", "RETIRE"]
 CONTENT_FILES = ["BUILDER.md", "APP_MODEL.md", "PROCESSES.md", "COMPONENTS.md", "KERNEL_ASKS.md"]
 
 findings = []

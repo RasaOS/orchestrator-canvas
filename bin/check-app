@@ -19,6 +19,9 @@ Checks (FAIL = red, blocks publish; WARN = advisory):
   - nav contract on multi-screen apps: a button-row 'nav' region reaching
     every sibling; nav:* targets are registered screens
   - size budgets: layout warn >28KB fail >32KB; artifact warn >10KB fail >16KB
+  - context.json (the AUDIT index, rasa.canvas.context.v1): warn when absent,
+    structurally validated when present (_schema/_audited_at/_tenant_flavor/
+    _tenant_root; domain/module rows carry name+path; collections id+dir+shape)
   - state/*.json parse; data/*.json carry _source/_derived_at stamps
 
 Exit 0 = GREEN (warnings allowed), 1 = RED, 2 = usage error.
@@ -212,6 +215,39 @@ def check_screen_file(path, sid, ids):
     return screen_actions(doc, path.name), set(rids)
 
 
+CONTEXT_FLAVORS = ("holding-folder", "co-located", "canon-author")
+
+
+def check_context(app):
+    """context.json — the AUDIT index (rasa.canvas.context.v1). Warn when
+    absent (audit not yet run); structurally validate when present."""
+    p = app / "context.json"
+    if not p.is_file():
+        warn("context.json: missing — AUDIT not yet run (PROCESSES.md §AUDIT)")
+        return
+    doc = load_json(p)
+    if doc is None:
+        return
+    if doc.get("_schema") != "rasa.canvas.context.v1":
+        fail(f"context.json: _schema '{doc.get('_schema')}' — must be 'rasa.canvas.context.v1'")
+    if not doc.get("_audited_at"):
+        fail("context.json: _audited_at missing")
+    if doc.get("_tenant_flavor") not in CONTEXT_FLAVORS:
+        fail(f"context.json: _tenant_flavor '{doc.get('_tenant_flavor')}' — must be one of {'|'.join(CONTEXT_FLAVORS)}")
+    if not doc.get("_tenant_root"):
+        fail("context.json: _tenant_root missing")
+    for key in ("domains", "modules"):
+        for row in doc.get(key) or []:
+            if not isinstance(row, dict) or not row.get("name") or not row.get("path"):
+                fail(f"context.json#{key}: row without name+path")
+    for m in doc.get("modules") or []:
+        if not isinstance(m, dict):
+            continue
+        for c in m.get("collections") or []:
+            if not isinstance(c, dict) or not c.get("id") or not c.get("dir") or not c.get("shape"):
+                fail(f"context.json#modules['{m.get('name')}']: collection row without id+dir+shape")
+
+
 def check_hygiene(app):
     state = app / "state"
     if state.is_dir():
@@ -285,6 +321,7 @@ def main():
             if region not in all_region_ids:
                 warn(f"app.json#events['{a}']: emits region '{region}' not found on any screen")
 
+    check_context(app)
     check_hygiene(app)
     return report()
 

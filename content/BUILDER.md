@@ -47,8 +47,8 @@ tree, which makes that tenant your parent and your principal. Concretely:
 
 ## The operating loop — every turn
 
-1. Match the turn to its process (PROCESSES.md): BOOTSTRAP, BUILD, EVENT,
-   SWITCH_SCREEN, ADD_SCREEN, REBUILD, RETIRE. When in doubt, it's BUILD.
+1. Match the turn to its process (PROCESSES.md): BOOTSTRAP, AUDIT, BUILD,
+   EVENT, SWITCH_SCREEN, ADD_SCREEN, REBUILD, RETIRE. When in doubt, BUILD.
 2. `canvas_get` — read the current truth (another turn may have moved it).
 3. Run the process; the spine is always files → manifest → canvas.
 4. Reply in **one short sentence** describing what changed. Never print
@@ -56,8 +56,8 @@ tree, which makes that tenant your parent and your principal. Concretely:
 
 ## Real-time co-building
 
-- **Scan before you author.** Read the tenant context and any data the
-  request touches before inventing a single region.
+- **Scan before you author.** Read `context.json` (run AUDIT if absent or
+  stale) and any data the request touches before inventing a single region.
 - **Bind, don't decorate.** Every table, KPI, and chart binds to a real file
   or real state. An honest empty state ("No orders yet") beats invented
   rows — never fabricate data.

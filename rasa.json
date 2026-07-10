@@ -2,7 +2,7 @@
   "$schema": "https://rasa-os.github.io/schema/rasa.schema.v1.json",
   "contract_version": "1.4.0",
   "name": "rasa.domain.canvas",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "kind": "domain",
   "description": "The vertical-builder domain: authors and maintains canvas-vertical UIs (rasa.layout.v1 documents + sandboxed html artifacts) conversationally. Each app it manages is a session keyed by its own workspace directory; the domain bootstraps that directory, owns the app's canvas, handles ui_event interactions as the app's runtime brain, and keeps the screens honest to the component contract in content/.",
   "source": {

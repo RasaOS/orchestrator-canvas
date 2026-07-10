@@ -21,8 +21,8 @@ not a hostage-taker.
 
 Trigger: this directory has no `app.json`.
 
-1. Scan the tenant: its `CLAUDE.md`, obvious data files, sibling apps, and
-   what the addressing turn says this app is for.
+1. Run AUDIT (below) — it writes `context.json`, the index of what exists to
+   bind to. Note what the addressing turn says this app is for.
 2. Write the skeleton: `app.json` (id from the directory name, one `home`
    screen marked default, version `0.1.0`), `CHANGELOG.md`, `screens/`,
    `state/`.
@@ -30,6 +30,35 @@ Trigger: this directory has no `app.json`.
    a splash page. If no data is discoverable yet: an honest markdown-block
    saying what the app is, plus a form asking for the first data source.
 4. Gate, publish (write order), reply.
+
+## AUDIT — build/refresh the context index
+
+Trigger: BOOTSTRAP step 1 · an explicit "what can I bind to?" turn · a
+binding/data target that fails to resolve · the roster looks newer than
+`context.json#_audited_at`. Reads siblings, never writes them; produces one
+file: `context.json` (schema `rasa.canvas.context.v1`, published in this
+element's `schemas/`).
+
+1. Determine the tenant flavor STRUCTURALLY — never from the mere presence
+   of `elements/`: a `.rasa/holding/` dir → `holding-folder`; the tenant's
+   `rasa.json` declares `tenant.members[]` → `co-located`; `elements/` full
+   clones with no holding dir → `canon-author`.
+2. Locate the roster: holding-folder + canon-author → `<tenant>/elements/*/`;
+   co-located → the member repos (`<ns>-<name>/`) beside the tenant root.
+3. Record the parent tenant (name from its `rasa.json` if present, its
+   `CLAUDE.md` path), then each sibling element's `rasa.json` → name,
+   version, kind, `requires.parent_kind`.
+4. For each module, discover `collections[]` **seam-first**: (a) the
+   module's seeded seam/config file when one exists (it declares its own
+   root/taxonomy — read it FIRST); (b) the module's `rasa.json` seed/scaffold
+   declarations; (c) inference from its seeded layout + a few sample records.
+   Record dir, shape, record `file_glob`, per-field **types** where
+   inferable (`status: enum(a|b|c)` from observed values), `states` (subdirs
+   in lifecycle order), and `writable`.
+5. Note tenant data files (csv/json/…) reachable from the tenant root.
+6. Write `context.json` with `_audited_at` + `_tenant_flavor`. The index is
+   per-install and disposable. The index plans; files decide — re-read
+   sources before any publish regardless.
 
 ## BUILD — the user asks for UI, or a change to it
 

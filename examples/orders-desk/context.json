@@ -1,0 +1,36 @@
+{
+  "_schema": "rasa.canvas.context.v1",
+  "_audited_at": "2026-07-09T00:00:00Z",
+  "_tenant_flavor": "holding-folder",
+  "_tenant_root": "../../..",
+  "tenant": { "name": "acme.tenant.orders", "claude_md": "../../../CLAUDE.md" },
+  "domains": [],
+  "modules": [
+    {
+      "name": "rasa.module.tasks",
+      "path": "../../../elements/module-tasks",
+      "version": "0.1.2",
+      "parent_kind": ["domain", "tenant"],
+      "collections": [
+        {
+          "id": "tasks",
+          "dir": "tasks",
+          "shape": "folder-of-records",
+          "record": {
+            "file_glob": "TASK-*.md",
+            "fields": {
+              "id": "string",
+              "category": "enum(stub|spec|bug|hotfix)",
+              "status": "enum(triage|backlog|active|blocked|completed)"
+            },
+            "states": ["triage", "backlog", "active", "blocked", "completed"]
+          },
+          "writable": true
+        }
+      ]
+    }
+  ],
+  "tenant_data": [
+    { "path": "../../data/orders.csv", "kind": "csv", "purpose": "orders table" }
+  ]
+}

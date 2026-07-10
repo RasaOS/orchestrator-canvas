@@ -1,5 +1,28 @@
 # Changelog — rasa.domain.canvas
 
+## 0.8.0 — 2026-07-09
+
+**The context index lands (TASK-003) — the binding brain's first organ.**
+AUDIT becomes the **eighth named process** (BOOTSTRAP, AUDIT, BUILD, EVENT,
+SWITCH_SCREEN, ADD_SCREEN, REBUILD, RETIRE — check-doctrine's canon,
+BUILDER's routing loop, and CLAUDE's capsule updated in lockstep): it walks
+the tenant, detects the flavor **structurally** (`.rasa/holding/` →
+holding-folder; `tenant.members[]` → co-located; full clones sans holding →
+canon-author — never by mere presence of `elements/`), reads every sibling
+element's `rasa.json`, discovers module `collections[]` **seam-first**
+(module's own config file → rasa.json declarations → inference), records
+per-field **types** + lifecycle `states` + `writable`, and writes
+`context.json` — per-install, disposable, "the index plans; files decide."
+Published contract: `schemas/rasa.canvas.context.v1.schema.json`. BOOTSTRAP
+step 1 now runs AUDIT. APP_MODEL gains the context-index section + workspace
+tree entry. `bin/check-app` structurally validates `context.json` when
+present and warns when absent; the golden app carries a valid example index
+(module-tasks as the bindable collection — fields typed, states ordered,
+writable). All four negative fixtures still fail. Also: TASK-006 decided
+(user): **keep `.rasaos/apps/`** — matches the live shell; the platform
+naming question drafted for canon
+(docs/canon-drafts/SA-0XX-tenant-app-state-directory.md).
+
 ## 0.7.0 — 2026-07-09
 
 **The SA-023 re-role lands (TASK-002) — domain identity everywhere.** The

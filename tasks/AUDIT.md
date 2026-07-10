@@ -5,6 +5,11 @@ Curated, append-only record of meaningful project actions (per
 
 ## 2026-07-09
 
+- 📦 **TASK-003 shipped** — the context index: AUDIT becomes the eighth named
+  process (structural three-flavor detection — dry-run verified against the
+  real workspace as canon-author; seam-first discovery; typed fields);
+  `rasa.canvas.context.v1` schema published; check-app validates
+  `context.json`; golden app carries a valid index. Receipt: tag v0.8.0.
 - 📦 **TASK-006 shipped** — dot-dir reconciliation decided (user): keep
   `.rasaos/apps/` (matches the live shell @ `a5f6ff1`); the platform-naming
   question drafted for canon

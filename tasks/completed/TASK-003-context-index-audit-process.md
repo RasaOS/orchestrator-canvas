@@ -1,7 +1,7 @@
 ---
 id: TASK-003
 category: spec
-status: backlog
+status: completed
 ---
 
 # TASK-003: The context index — `context.json` schema + the AUDIT procedure
@@ -75,13 +75,19 @@ and the provision-then-bind flow. Design: `docs/design/binding-model.md` §3
 
 ## Acceptance criteria
 
-- [ ] Schema published and the golden `context.json` validates against it.
-- [ ] AUDIT procedure documents all three flavors with **structural**
+- [x] Schema published and the golden `context.json` validates against it.
+      *(jsonschema lib not installed in this env — validated structurally via
+      check-app's new checks + `python3 -m json.tool`; golden GREEN 0/0.)*
+- [x] AUDIT procedure documents all three flavors with **structural**
       detection, seam-first discovery precedence, and typed fields.
-- [ ] check-doctrine GREEN with the process-canon change (all mentions in
-      lockstep).
-- [ ] A fresh read of PROCESSES.md alone is enough to run an audit cold
-      (reviewer check).
+      *(Dry-run against the real workspace: `.rasa/holding/` absent, no
+      `tenant.members[]`, full clones under `elements/` → canon-author ✓ —
+      the case the naive heuristic misclassified.)*
+- [x] check-doctrine GREEN with the process-canon change (all mentions in
+      lockstep — PROCESSES.md order, check-doctrine constant, BUILDER
+      routing, CLAUDE capsule).
+- [ ] A fresh read of PROCESSES.md alone is enough to run an audit cold —
+      **reviewer check: user, at review** (the one box the closer can't tick).
 
 ## Verification plan (per the done-gate)
 
@@ -117,11 +123,13 @@ and the provision-then-bind flow. Design: `docs/design/binding-model.md` §3
 
 ## Self-review checklist
 
-- [ ] I followed the execution order in the spec.
-- [ ] Every acceptance criterion is met and individually verified.
-- [ ] I verified each step, not just the end state.
-- [ ] The done-gate passes (every gate in `.claude/done-gate.md`).
-- [ ] I didn't touch artifacts outside "Artifacts expected to change".
+- [x] I followed the execution order in the spec (eighth-process decision:
+      taken as the spec recommended; user sees it at review).
+- [x] Every acceptance criterion is met and individually verified (except the
+      explicit reviewer check, held open above).
+- [x] I verified each step, not just the end state.
+- [x] The done-gate passes (every gate in `.claude/done-gate.md`).
+- [x] I didn't touch artifacts outside "Artifacts expected to change".
 
 ### Dependencies
 

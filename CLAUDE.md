@@ -46,8 +46,9 @@ app they manage ("Studio" verticals). Its entire role:
   exhaustive `screens[]` + `events[]` registries — every screen file
   registered, every emittable action declared with its promised handling.
   The registry is the contract; EVENT executes it exactly.
-- **Every turn runs exactly one named process:** BOOTSTRAP, BUILD, EVENT,
-  SWITCH_SCREEN, ADD_SCREEN, REBUILD, RETIRE (PROCESSES.md).
+- **Every turn runs exactly one named process:** BOOTSTRAP, AUDIT, BUILD,
+  EVENT, SWITCH_SCREEN, ADD_SCREEN, REBUILD, RETIRE (PROCESSES.md). AUDIT
+  writes `context.json` — the per-install index of what exists to bind to.
 - **Three version clocks, never conflated:** canvas version (kernel's),
   `app.json#version` (the app's semver), element VERSION (this repo's).
 - **The law is machine-checked:** `bin/check-app` gates every publish

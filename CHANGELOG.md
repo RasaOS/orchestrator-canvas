@@ -1,4 +1,19 @@
-# Changelog — rasa.orchestrator.canvas
+# Changelog — rasa.domain.canvas
+
+## 0.5.3 — 2026-07-11
+
+### Completed the SA-023 `orchestrator`→`domain` content re-role (deferred at v0.5.0)
+
+- **Identity strings.** Renamed the residual `rasa.orchestrator.canvas` identity
+  strings → `rasa.domain.canvas` across the doc titles (CLAUDE.md, README.md,
+  this file), `rasa.json` (`session_model` element key + `tenant_model`
+  composition target), and the published schema `$id` (dead
+  `RasaOS/orchestrator-canvas` repo path → `RasaOS/domain-canvas`).
+- **Role-noun.** Folded the self-describing noun "orchestrator" → "domain" where
+  it names what this element *is* (README, CLAUDE.md, rasa.json, KERNEL_ASKS.md);
+  the behavior verb "orchestrates" stays. This element is a `domain` — SA-023
+  folded the orchestrator *kind* into `tenant`.
+- The v0.5.0 historical entry is preserved verbatim.
 
 ## 0.5.2 — 2026-07-09
 

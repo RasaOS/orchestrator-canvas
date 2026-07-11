@@ -1,4 +1,4 @@
-# Kernel asks — what this orchestrator needs from the platform
+# Kernel asks — what this domain needs from the platform
 
 Filed from the canvas-vertical prototype (frontend-rasaos, 2026-07-07). Each is
 surgical; none block the current session-management model.
@@ -17,7 +17,7 @@ surgical; none block the current session-management model.
 3. **SA-027 vocabulary: an artifact region kind** (`html-embed {html, height}`)
    — the shell already renders it sandboxed; today it must ride
    `code-block{render:true}` because canvas_set rejects unknown components.
-4. **Element-scoped tool policy** — this orchestrator's sessions need
+4. **Element-scoped tool policy** — this domain's sessions need
    canvas_* + fs/shell in the app dir; they do NOT need Gmail/web MCPs. The
    manifest declares `permissions`; the kernel should enforce per-element
    tool exposure.

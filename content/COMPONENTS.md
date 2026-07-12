@@ -22,16 +22,19 @@ The RasaOS shell currently RENDERS this subset (the rest error-tile —
 prefer these): `table · card-strip · card-list · form · chart · code-block ·
 media-viewer · kpi-tile · timeline · markdown-block · button-row`.
 
-Prop shapes the shell renders (keep to these):
+Prop shapes the shell renders — author to these EXACT keys (the shell reads
+them literally; the wrong key renders EMPTY, not an error). Legacy aliases in
+parens are tolerated by the renderer but prefer the canonical key:
 - **kpi-tile** `{value, label, delta?}`
 - **table** `{columns: [string | {key,label}], rows: [[]|{}]}`
-- **card-strip / card-list** `{cards: [{title, body?/description?, on_click?}]}`
-- **chart** `{type: 'bar'|'line', series/points, labels}`
-- **form** `{fields: [{name,label,type}], submit_label?}` → emits `submit`
-- **timeline** `{items: [{label, detail?, at?}]}`
-- **button-row** `{buttons: [{id,label}]}` → each click emits its id
-- **markdown-block** `{markdown}` · **code-block** `{language, code}`
-- **media-viewer** `{src (data: URI), alt?}`
+- **card-strip** `{cards: [{title, subtitle?}]}` — presentational only; card clicks do nothing (use card-list for clickable cards)
+- **card-list** `{cards: [{title, subtitle?, on_click?}]}` (subtitle aliases `body`/`description`) — a card's `on_click` VALUE is the action it emits
+- **chart** `{data: [{label, value}]}` — horizontal bars (aliases: container `points`/`series`, item `name`/`x` for label, `y` for value)
+- **form** `{fields: [{id, label, type, placeholder?}], submit_label?}` → emits `submit` with `{<field-id>: value}` (field key `id` aliases `name`)
+- **timeline** `{events: [{at, label}]}` (aliases `items`)
+- **button-row** `{buttons: [{id, label}]}` → each click emits its `id`
+- **markdown-block** `{content}` (aliases `markdown`) · **code-block** `{language, code}`
+- **media-viewer** `{src}` — renders an http(s) `src` as a LINK only; it does NOT embed images (SA-027). For an inline image/chart, author an artifact (below).
 
 Interactions: any `on_click`/button/submit emits a `ui_event` turn back into
 this session as `[canvas] <action> (<region-id>)`.

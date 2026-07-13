@@ -1,0 +1,15 @@
+{
+  "app": "rasa.app.v1",
+  "id": "unreachable-leaf",
+  "name": "Unreachable leaf (must FAIL)",
+  "version": "0.1.0",
+  "created": "2026-07-12",
+  "screens": [
+    { "id": "home", "title": "Home", "default": true },
+    { "id": "stray", "title": "Stray", "parent": "home" }
+  ],
+  "active_screen": "home",
+  "events": [
+    { "action": "nav:home", "emits": ["nav"], "handling": "SWITCH_SCREEN home" }
+  ]
+}

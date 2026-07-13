@@ -1,12 +1,32 @@
 {
   "layout": "1.0.0",
-  "screen": { "name": "home", "title": "Home" },
+  "screen": {
+    "name": "home",
+    "title": "Home",
+    "layout_grid": "full",
+    "ai_rail_inherited": true
+  },
   "regions": [
     {
       "id": "nav",
       "component": "button-row",
-      "props": { "buttons": [ { "id": "nav:orders", "label": "Orders" } ] }
+      "props": {
+        "buttons": [
+          {
+            "id": "nav:orders",
+            "label": "Orders"
+          }
+        ]
+      },
+      "slot": "main"
     },
-    { "id": "notes", "component": "markdown-block", "props": { "markdown": "hello" } }
+    {
+      "id": "notes",
+      "component": "markdown-block",
+      "props": {
+        "content": "hello"
+      },
+      "slot": "main"
+    }
   ]
 }

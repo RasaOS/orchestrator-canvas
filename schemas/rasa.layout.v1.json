@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rasa-os.github.io/schema/rasa.layout.v1.json",
+  "title": "RasaOS Frontend Layout",
+  "description": "Canon doc 10 Appendix A (v1.0.0) screen/region layout document, expressed as JSON Schema draft-2020-12. Authored home: RasaOS/schema (public). Vendored into the kernel at contracts/layout/ and mirrored to core/src/canvas/layout-schema.json (re-sync: cp contracts/layout/rasa.layout.v1.json core/src/canvas/layout-schema.json). The component enum is the full frozen-18 library plus the canvas-motivated additions (doc 10 lock FE-002); deployment-time narrowing is the kernel component allowlist's concern (TASK-226), not the schema's. Per-component prop shapes are generally left open; the exception is html-embed, whose size caps are contract-enforced here (TASK-249 / canon SA-027).",
+  "type": "object",
+  "required": ["layout", "screen", "regions"],
+  "properties": {
+    "layout": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Layout contract version (SemVer)."
+    },
+    "screen": {
+      "type": "object",
+      "required": ["name", "title", "layout_grid"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "title": { "type": "string", "maxLength": 60 },
+        "theme": { "type": "string" },
+        "layout_grid": {
+          "enum": [
+            "full",
+            "sidebar-main",
+            "sidebar-main-rail",
+            "two-col",
+            "three-col",
+            "dashboard"
+          ]
+        },
+        "ai_rail_inherited": { "type": "boolean", "default": false },
+        "breakpoints": {
+          "type": "object",
+          "properties": {
+            "sm": { "type": "number" },
+            "md": { "type": "number" },
+            "lg": { "type": "number" }
+          }
+        }
+      }
+    },
+    "regions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "slot", "component"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "slot": { "type": "string" },
+          "component": {
+            "description": "Doc 10 §4 component library. The first 18 are the v1.0.0 frozen set (lock FE-002); markdown-block / button-row / card-list are the canvas-motivated v1.1 additions (canon DOC-10-edit-canvas-components, review approved 2026-07-02; doc 10 absorption pending); html-embed is the sandboxed-artifact region for 3D + animation (canon SA-027 / TASK-249) — its prop shape is constrained below.",
+            "enum": [
+              "card-strip",
+              "inbox-list",
+              "matter-detail",
+              "doc-viewer",
+              "table",
+              "chart",
+              "kanban",
+              "timeline",
+              "kpi-tile",
+              "filter-bar",
+              "nav",
+              "modal",
+              "form",
+              "calendar-grid",
+              "media-viewer",
+              "code-block",
+              "ai-rail",
+              "map",
+              "markdown-block",
+              "button-row",
+              "card-list",
+              "html-embed"
+            ]
+          },
+          "source": { "type": "string", "pattern": "^bus:/" },
+          "props": { "type": "object" },
+          "frame": {
+            "type": "object",
+            "description": "Optional absolute placement in canvas-local CSS px — origin (0,0) at the top-left of the canvas surface (canon SA-028). Regions with a frame render absolutely; regions without flow per layout_grid. Overlap is legal; z-order is document order.",
+            "required": ["x", "y", "w", "h"],
+            "properties": {
+              "x": { "type": "number", "minimum": 0, "maximum": 32768 },
+              "y": { "type": "number", "minimum": 0, "maximum": 32768 },
+              "w": { "type": "number", "minimum": 1, "maximum": 32768 },
+              "h": { "type": "number", "minimum": 1, "maximum": 32768 }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "description": "html-embed (canon SA-027 / TASK-249): a sandboxed HTML/JS artifact region for 3D + animation. props.html is the self-contained document the shell renders in a sandboxed iframe; props.height is the fixed artifact height in CSS px. Size caps are contract-enforced here so an oversized artifact is rejected with a structured, self-correctable error rather than at render time.",
+            "if": {
+              "required": ["component"],
+              "properties": { "component": { "const": "html-embed" } }
+            },
+            "then": {
+              "required": ["props"],
+              "properties": {
+                "props": {
+                  "type": "object",
+                  "required": ["html"],
+                  "properties": {
+                    "html": {
+                      "type": "string",
+                      "maxLength": 16384,
+                      "description": "The self-contained HTML document for the artifact (<= 16384 chars)."
+                    },
+                    "height": {
+                      "type": "integer",
+                      "minimum": 120,
+                      "maximum": 2000,
+                      "description": "Fixed artifact height in CSS px (120-2000). Optional; the shell defaults it when absent."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

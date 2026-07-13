@@ -1,0 +1,24 @@
+{
+  "layout": "1.0.0",
+  "screen": {
+    "name": "a",
+    "title": "A",
+    "layout_grid": "full",
+    "ai_rail_inherited": true
+  },
+  "regions": [
+    {
+      "id": "nav",
+      "component": "button-row",
+      "props": {
+        "buttons": [
+          {
+            "id": "nav:b",
+            "label": "\u2190 B"
+          }
+        ]
+      },
+      "slot": "main"
+    }
+  ]
+}

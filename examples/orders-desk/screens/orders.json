@@ -1,14 +1,16 @@
 {
   "layout": "1.0.0",
-  "screen": { "name": "orders", "title": "Orders" },
+  "screen": { "name": "orders", "title": "Orders", "layout_grid": "full", "ai_rail_inherited": true },
   "regions": [
     {
       "id": "nav",
+      "slot": "main",
       "component": "button-row",
       "props": { "buttons": [ { "id": "nav:home", "label": "Overview" } ] }
     },
     {
       "id": "orders",
+      "slot": "main",
       "component": "table",
       "props": {
         "columns": [ "Order", "Customer", "Status" ],
@@ -20,6 +22,7 @@
     },
     {
       "id": "actions",
+      "slot": "main",
       "component": "button-row",
       "props": {
         "buttons": [

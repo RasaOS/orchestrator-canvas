@@ -1,0 +1,18 @@
+{
+  "layout": "1.0.0",
+  "screen": {
+    "name": "home",
+    "title": "Home",
+    "layout_grid": "full"
+  },
+  "regions": [
+    {
+      "id": "notes",
+      "slot": "main",
+      "component": "markdown-block",
+      "props": {
+        "content": "hi"
+      }
+    }
+  ]
+}

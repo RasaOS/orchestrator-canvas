@@ -7,34 +7,72 @@ Checks (FAIL = red, blocks publish; WARN = advisory):
   - app.json shape (rasa.app.v1, kebab id, semver, required fields)
   - screens[] registry exhaustive both ways (no orphan files, no missing files)
   - active_screen registered; at most one default screen
-  - each screen file: valid rasa.layout.v1, screen.name == screen id,
-    unique region ids, components in the kernel allowlist (warn outside the
-    shell-rendered subset)
-  - event coverage: every emittable action (button-row ids, card on_click,
-    form submit, artifact rasa.emit calls) registered in app.json#events;
-    stale registry rows warned
-  - nav contract on multi-screen apps: a button-row 'nav' region reaching
-    every sibling; nav:* targets are registered screens
-  - size budgets: layout warn >28KB fail >32KB; artifact warn >10KB fail >16KB
+  - each screen file (canon rasa.layout.v1): screen.name == screen id +
+    ^[a-z][a-z0-9-]* pattern, title <=60, layout_grid present + in the schema
+    enum; each region has a slot + valid unique id; components hard-gated to
+    the kernel allowlist (canvas_set rejects anything else); per-component
+    required props (canon Appendix B.2); html-embed size + height
+  - event coverage: every emittable action (button-row ids, card-list on_click,
+    form submit, artifact rasa.emit calls) registered in app.json#events; stale
+    rows warned; a card-strip card on_click is a dead handler → FAIL
+  - nav contract on multi-screen apps: sections (no parent) mesh to peer
+    sections; leaves (with parent) carry only ancestor back-links incl. the
+    parent; parent graph acyclic + rooted; every leaf reachable via a forward
+    nav: link (content region) or an events[] target; nav:* targets registered
+  - caps (kernel-enforced — canvas_set rejects above): layout warn >32KB
+    fail >256KB; <=64 regions; artifact warn >10KB fail >16KB
   - state/*.json parse; data/*.json carry _source/_derived_at stamps
 
 Exit 0 = GREEN (warnings allowed), 1 = RED, 2 = usage error.
 """
 import json
+import posixpath
 import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _contract import KERNEL_ALLOWLIST, SHELL_RENDERED
+from _contract import KERNEL_ALLOWLIST
 
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 KEBAB = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+LAYOUT_ID = re.compile(r"^[a-z][a-z0-9-]*$")   # kernel schema: screen.name / region.id
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 EMIT = re.compile(r"rasa\s*\.\s*emit\s*\(\s*['\"]([^'\"]+)['\"]")
 
-LAYOUT_WARN, LAYOUT_FAIL = 28 * 1024, 32 * 1024
-ARTIFACT_WARN, ARTIFACT_FAIL = 10 * 1024, 16 * 1024
+# Size + count caps. The hard caps are the KERNEL's (validator.ts): a layout
+# above them is rejected by canvas_set. The soft warns are the element's own
+# density guidance, well under the kernel ceiling.
+LAYOUT_WARN, LAYOUT_FAIL = 32 * 1024, 256 * 1024     # kernel MAX_LAYOUT_BYTES
+ARTIFACT_WARN, ARTIFACT_FAIL = 10 * 1024, 16 * 1024  # kernel html-embed maxLength
+MAX_REGIONS = 64                                     # kernel MAX_REGIONS
+TITLE_MAX = 60                                       # schema screen.title maxLength
+
+# Constraint values pulled from the vendored published schema so check-app can't
+# drift from it (schemas/rasa.layout.v1.json == RasaOS/schema == kernel copy).
+_SCHEMA = json.loads(
+    (Path(__file__).resolve().parent.parent / "schemas" / "rasa.layout.v1.json").read_text()
+)
+LAYOUT_GRIDS = set(_SCHEMA["properties"]["screen"]["properties"]["layout_grid"]["enum"])
+
+# Canon Appendix B.2 (conversational-canvas inline dialect) — required props per
+# component, as (prop, kind) with kind in {"any","str","list"}. Hard-gated: the
+# kernel leaves props open, but canon B.2 specifies them and GREEN must mean
+# "renders correctly", not just "canvas_set accepts it".
+B2_REQUIRED = {
+    "table":          [("columns", "list"), ("rows", "list")],
+    "kpi-tile":       [("value", "any"), ("label", "any")],
+    "chart":          [("data", "list")],
+    "timeline":       [("events", "list")],
+    "form":           [("fields", "list")],
+    "card-strip":     [("cards", "list")],
+    "card-list":      [("cards", "list")],
+    "button-row":     [("buttons", "list")],
+    "markdown-block": [("content", "str")],
+    "code-block":     [("code", "str")],
+    "media-viewer":   [("src", "str")],
+    "html-embed":     [("html", "str")],
+}
 
 findings = []
 
@@ -65,7 +103,7 @@ def screen_actions(doc):
             for b in props.get("buttons") or []:
                 if isinstance(b, dict) and b.get("id"):
                     actions.add(str(b["id"]))
-        if comp in ("card-strip", "card-list"):
+        if comp == "card-list":   # card-strip clicks are dead (shell renders them inert) — not live actions
             for c in props.get("cards") or []:
                 if isinstance(c, dict) and c.get("on_click"):
                     actions.add(str(c["on_click"]))
@@ -74,6 +112,27 @@ def screen_actions(doc):
         if comp == "code-block" and props.get("render"):
             actions |= set(EMIT.findall(props.get("code", "")))
     return actions
+
+
+def region_nav_targets(region):
+    """The nav:<screen-id> targets a region links to (button ids + card on_click).
+
+    FORWARD reachability: a nav:<t> link in a *content* region means the screen
+    descends/switches into <t>. card-strip clicks are dead, so only genuinely
+    clickable sources count.
+    """
+    targets = set()
+    props = region.get("props") or {}
+    comp = region.get("component")
+    if comp == "button-row":
+        for b in props.get("buttons") or []:
+            if isinstance(b, dict) and str(b.get("id", "")).startswith("nav:"):
+                targets.add(str(b["id"])[4:])
+    if comp == "card-list":
+        for c in props.get("cards") or []:
+            if isinstance(c, dict) and str(c.get("on_click", "")).startswith("nav:"):
+                targets.add(str(c["on_click"])[4:])
+    return targets
 
 
 def check_manifest(m):
@@ -90,9 +149,37 @@ def check_manifest(m):
         fail(f"app.json: created '{m['created']}' is not YYYY-MM-DD")
 
 
+# The app dir sits at <tenant>/.rasaos/apps/<app-id>/ — 3 levels below the tenant
+# root, so a data_source may ascend at most 3 '..' before it leaves the tenant.
+TENANT_DEPTH = 3
+
+
+def check_data_sources(m):
+    """data_sources[].path must be tenant-relative and stay inside the tenant."""
+    for ds in m.get("data_sources") or []:
+        if not isinstance(ds, dict) or not ds.get("path"):
+            fail("app.json#data_sources: row without a path")
+            continue
+        path = str(ds["path"])
+        if path.startswith("/") or (len(path) > 1 and path[1] == ":"):
+            fail(f"app.json#data_sources: '{path}' is absolute — must be tenant-relative")
+            continue
+        up = 0
+        for part in posixpath.normpath(path).split("/"):
+            if part == "..":
+                up += 1
+            else:
+                break
+        if up > TENANT_DEPTH:
+            fail(f"app.json#data_sources: '{path}' escapes the tenant root "
+                 f"(ascends >{TENANT_DEPTH} levels from the app dir)")
+
+
 def check_screen_registry(m):
+    """Returns (ids, parent_of, roots). parent_of[sid] is the parent id or None."""
     screens = m.get("screens") or []
     ids = []
+    parent_of = {}
     for s in screens:
         if not isinstance(s, dict) or not s.get("id"):
             fail("app.json#screens: row without an id")
@@ -101,6 +188,8 @@ def check_screen_registry(m):
         if sid in ids:
             fail(f"app.json#screens: duplicate screen id '{sid}'")
         ids.append(sid)
+        p = s.get("parent")
+        parent_of[sid] = str(p) if p is not None else None
         if not KEBAB.match(sid):
             fail(f"app.json#screens: id '{sid}' is not kebab-case")
         if not s.get("title"):
@@ -110,7 +199,29 @@ def check_screen_registry(m):
     active = m.get("active_screen")
     if active and active not in ids:
         fail(f"app.json: active_screen '{active}' is not a registered screen")
-    return ids
+
+    # parent graph: registered, not self, acyclic, rooted (every chain ends at a section)
+    for sid, p in parent_of.items():
+        if p is None:
+            continue
+        if p == sid:
+            fail(f"app.json#screens['{sid}']: parent is itself")
+        elif p not in ids:
+            fail(f"app.json#screens['{sid}']: parent '{p}' is not a registered screen")
+    for sid in ids:
+        seen, cur = set(), sid
+        while parent_of.get(cur):
+            cur = parent_of[cur]
+            if cur == sid or cur in seen:
+                fail(f"app.json#screens: parent chain from '{sid}' cycles")
+                break
+            seen.add(cur)
+            if cur not in ids:
+                break
+    roots = [i for i in ids if parent_of.get(i) is None]
+    if ids and not roots:
+        fail("app.json#screens: no top-level (parent-less) screen — every screen has a parent")
+    return ids, parent_of, roots
 
 
 def check_events_registry(m):
@@ -130,22 +241,59 @@ def check_events_registry(m):
     return reg
 
 
-def check_screen_file(path, sid, ids):
-    """Returns (actions, region_ids) or (set(), set()) on parse failure."""
+def _artifact_size(path, rid, n):
+    if n > ARTIFACT_FAIL:
+        fail(f"{path.name}#{rid}: artifact is {n}B — exceeds the {ARTIFACT_FAIL}B kernel cap")
+    elif n > ARTIFACT_WARN:
+        warn(f"{path.name}#{rid}: artifact is {n}B — over the ~10KB budget")
+
+
+def check_props(path, rid, comp, props):
+    """Canon Appendix B.2 required-prop gate for the canvas inline dialect."""
+    for prop, kind in B2_REQUIRED.get(comp, []):
+        v = props.get(prop)
+        if v is None or v == "" or v == [] or v == {}:
+            fail(f"{path.name}#{rid}: {comp} missing required prop '{prop}' (canon Appendix B.2)")
+            continue
+        if kind == "list" and not isinstance(v, list):
+            fail(f"{path.name}#{rid}: {comp}.{prop} must be a list")
+        elif kind == "str" and not isinstance(v, str):
+            fail(f"{path.name}#{rid}: {comp}.{prop} must be a string")
+
+
+def check_screen_file(path, sid, ids, parent_of, roots):
+    """Returns (actions, region_ids, forward_targets) or empties on parse failure.
+
+    forward_targets = screen ids this screen links FORWARD into (nav:<t> in any
+    content region) — fed to the whole-app leaf-reachability pass.
+    """
     doc = load_json(path)
     if doc is None:
-        return set(), set()
+        return set(), set(), set()
     if doc.get("layout") != "1.0.0":
         warn(f"{path.name}: layout version '{doc.get('layout')}' (expected '1.0.0')")
     scr = doc.get("screen") or {}
-    if scr.get("name") != sid:
-        fail(f"{path.name}: screen.name '{scr.get('name')}' must equal the screen id '{sid}'")
-    if not scr.get("title"):
+    name = scr.get("name")
+    if name != sid:
+        fail(f"{path.name}: screen.name '{name}' must equal the screen id '{sid}'")
+    if name and not LAYOUT_ID.match(str(name)):
+        fail(f"{path.name}: screen.name '{name}' must match ^[a-z][a-z0-9-]*$ (kernel schema)")
+    title = scr.get("title")
+    if not title:
         fail(f"{path.name}: screen.title missing")
+    elif len(str(title)) > TITLE_MAX:
+        fail(f"{path.name}: screen.title exceeds {TITLE_MAX} chars (schema)")
+    grid = scr.get("layout_grid")
+    if not grid:
+        fail(f"{path.name}: screen.layout_grid missing — required by canvas_set (rasa.layout.v1)")
+    elif grid not in LAYOUT_GRIDS:
+        fail(f"{path.name}: screen.layout_grid '{grid}' not one of {sorted(LAYOUT_GRIDS)}")
     regions = doc.get("regions")
     if not isinstance(regions, list) or not regions:
         fail(f"{path.name}: regions[] missing or empty")
-        return set(), set()
+        return set(), set(), set()
+    if len(regions) > MAX_REGIONS:
+        fail(f"{path.name}: {len(regions)} regions — exceeds the kernel cap of {MAX_REGIONS}")
 
     rids = []
     for r in regions:
@@ -156,44 +304,94 @@ def check_screen_file(path, sid, ids):
         if rid in rids:
             fail(f"{path.name}: duplicate region id '{rid}'")
         rids.append(rid)
+        if not LAYOUT_ID.match(str(rid)):
+            fail(f"{path.name}#{rid}: region id must match ^[a-z][a-z0-9-]*$ (kernel schema)")
+        if not r.get("slot"):
+            fail(f"{path.name}#{rid}: region.slot missing — required by canvas_set (rasa.layout.v1)")
         comp = r.get("component")
         props = r.get("props") or {}
         if comp not in KERNEL_ALLOWLIST:
-            fail(f"{path.name}#{rid}: component '{comp}' is not in the kernel allowlist")
-        elif comp not in SHELL_RENDERED:
-            warn(f"{path.name}#{rid}: '{comp}' is allowlisted but the shell error-tiles it — prefer the rendered subset")
-        if comp == "code-block" and props.get("render"):
-            n = len(str(props.get("code", "")).encode())
-            if n > ARTIFACT_FAIL:
-                fail(f"{path.name}#{rid}: artifact is {n}B — exceeds the {ARTIFACT_FAIL}B hard cap")
-            elif n > ARTIFACT_WARN:
-                warn(f"{path.name}#{rid}: artifact is {n}B — over the ~10KB budget")
+            fail(f"{path.name}#{rid}: component '{comp}' is not in the kernel allowlist — canvas_set rejects it")
+        else:
+            check_props(path, rid, comp, props)
+        if comp == "html-embed":
+            _artifact_size(path, rid, len(str(props.get("html", "")).encode()))
+            h = props.get("height")
+            if h is not None and (isinstance(h, bool) or not isinstance(h, (int, float)) or not 120 <= h <= 2000):
+                fail(f"{path.name}#{rid}: html-embed height {h!r} out of range 120–2000 (schema)")
+        elif comp == "code-block" and props.get("render"):
+            _artifact_size(path, rid, len(str(props.get("code", "")).encode()))
+        if comp == "card-strip":   # presentational only — a card on_click is a dead handler
+            for c in props.get("cards") or []:
+                if isinstance(c, dict) and c.get("on_click"):
+                    fail(f"{path.name}#{rid}: card-strip is presentational — card on_click '{c['on_click']}' is dead (shell renders card-strip clicks inert); use card-list for clickable cards")
+                    break
 
     n = path.stat().st_size
     if n > LAYOUT_FAIL:
-        fail(f"{path.name}: layout is {n}B — exceeds the {LAYOUT_FAIL}B hard cap")
+        fail(f"{path.name}: layout is {n}B — exceeds the kernel {LAYOUT_FAIL}B cap (canvas_set rejects)")
     elif n > LAYOUT_WARN:
-        warn(f"{path.name}: layout is {n}B — nearing the ~32KB cap")
+        warn(f"{path.name}: layout is {n}B — over the ~32KB density budget")
 
-    # nav contract (multi-screen apps only)
+    # forward links this screen makes into other screens (content regions only —
+    # the 'nav' region is structural, not a descent)
+    forward = set()
+    for r in regions:
+        if r.get("id") == "nav":
+            continue
+        forward |= region_nav_targets(r)
+
+    # nav contract (multi-screen apps only): sections mesh, leaves climb
     if len(ids) > 1:
+        def ancestors(x):
+            out, cur, seen = [], parent_of.get(x), set()
+            while cur is not None and cur not in seen:
+                out.append(cur)
+                seen.add(cur)
+                cur = parent_of.get(cur)
+            return out
+
         nav = next((r for r in regions if r.get("id") == "nav"), None)
-        if nav is None:
-            fail(f"{path.name}: multi-screen app but no 'nav' region (nav contract, APP_MODEL.md)")
-        elif nav.get("component") != "button-row":
+        targets = None
+        if nav is not None and nav.get("component") != "button-row":
             fail(f"{path.name}#nav: nav region must be a button-row")
-        else:
+        elif nav is not None:
             buttons = (nav.get("props") or {}).get("buttons") or []
             targets = {str(b.get("id", ""))[4:] for b in buttons
                        if isinstance(b, dict) and str(b.get("id", "")).startswith("nav:")}
-            missing = set(ids) - {sid} - targets
-            if missing:
-                fail(f"{path.name}#nav: missing nav button(s) for sibling screen(s): {', '.join(sorted(missing))}")
+
+        parent = parent_of.get(sid)
+        if parent is None:  # SECTION — mesh to peer sections only
+            required = set(roots) - {sid}
+            if not required:  # lone section: no peers to mesh to
+                if targets:
+                    fail(f"{path.name}#nav: lone top-level screen must carry no nav: buttons")
+            elif targets is None:
+                fail(f"{path.name}: section needs a 'nav' button-row meshing to peer section(s): {', '.join(sorted(required))}")
+            else:
+                miss = required - targets
+                if miss:
+                    fail(f"{path.name}#nav: section missing peer tab button(s): {', '.join(sorted(miss))}")
+                extra = targets - required
+                if extra:
+                    fail(f"{path.name}#nav: section nav carries non-peer target(s): {', '.join(sorted(extra))} — forward/descend links belong in a content region")
+        else:  # LEAF — only ancestor back-links, parent required
+            anc = set(ancestors(sid))
+            if targets is None:
+                fail(f"{path.name}: leaf needs a 'nav' button-row with a back button to parent '{parent}'")
+            else:
+                if parent not in targets:
+                    fail(f"{path.name}#nav: leaf missing back button 'nav:{parent}' to its declared parent")
+                extra = targets - anc
+                if extra:
+                    fail(f"{path.name}#nav: leaf nav carries non-ancestor target(s): {', '.join(sorted(extra))} — only ancestor back-links belong in 'nav'; forward/lateral links go in a content region")
+
+        if targets:  # unknown-screen guard for either class
             unknown = targets - set(ids)
             if unknown:
                 fail(f"{path.name}#nav: nav target(s) are not registered screens: {', '.join(sorted(unknown))}")
 
-    return screen_actions(doc), set(rids)
+    return screen_actions(doc), set(rids), forward
 
 
 def check_hygiene(app):
@@ -234,7 +432,8 @@ def main():
         return report()
 
     check_manifest(m)
-    ids = check_screen_registry(m)
+    check_data_sources(m)
+    ids, parent_of, roots = check_screen_registry(m)
     reg = check_events_registry(m)
 
     screens_dir = app / "screens"
@@ -249,9 +448,11 @@ def main():
 
     emitted = {}   # action -> {screen ids that emit it}
     all_region_ids = set()
+    reachable_forward = set()   # screen ids reached by a forward nav: link in a content region
     for sid in sorted(set(ids) & set(files)):
-        actions, rids = check_screen_file(files[sid], sid, ids)
+        actions, rids, forward = check_screen_file(files[sid], sid, ids, parent_of, roots)
         all_region_ids |= rids
+        reachable_forward |= forward
         for a in actions:
             emitted.setdefault(a, set()).add(sid)
 
@@ -268,6 +469,27 @@ def main():
         for region in row.get("emits") or []:
             if region not in all_region_ids:
                 warn(f"app.json#events['{a}']: emits region '{region}' not found on any screen")
+
+    # events[].target — structured switch/spawn destinations: validate + feed reachability
+    event_targets = set()
+    for a, row in reg.items():
+        t = row.get("target")
+        if t:
+            t = str(t)
+            if t not in ids:
+                fail(f"app.json#events['{a}']: target '{t}' is not a registered screen")
+            else:
+                event_targets.add(t)
+
+    # leaf reachability: every leaf must be reached by a forward nav: link (content
+    # region) or an events[] target — a declared-but-unlinked leaf is a dead screen
+    default = next((s["id"] for s in (m.get("screens") or [])
+                    if isinstance(s, dict) and s.get("default")), None)
+    reachable = set(roots) | reachable_forward | event_targets | ({default} if default else set())
+    for sid in ids:
+        if parent_of.get(sid) is not None and sid not in reachable:
+            fail(f"screen '{sid}' is a leaf but nothing links into it "
+                 f"(no forward nav:{sid} in a content region and no events[] target={sid}) — unreachable")
 
     check_hygiene(app)
     return report()

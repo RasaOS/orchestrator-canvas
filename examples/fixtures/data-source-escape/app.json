@@ -1,0 +1,22 @@
+{
+  "app": "rasa.app.v1",
+  "id": "data-source-escape",
+  "name": "Data Source Escape",
+  "version": "0.1.0",
+  "created": "2026-07-12",
+  "screens": [
+    {
+      "id": "home",
+      "title": "Home",
+      "default": true
+    }
+  ],
+  "active_screen": "home",
+  "data_sources": [
+    {
+      "path": "../../../../etc/passwd",
+      "purpose": "escapes the tenant"
+    }
+  ],
+  "events": []
+}

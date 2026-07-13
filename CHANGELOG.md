@@ -1,4 +1,89 @@
-# Changelog — rasa.orchestrator.canvas
+# Changelog — rasa.domain.canvas
+
+## 0.7.0 — 2026-07-13
+
+Smart-merge of the page-creation nav standard onto the Phase-B/C enforcement
+foundation (branch `claude/page-creation-standards-c5e7c9`). The two are
+complementary — real-contract enforcement (how a screen is drawn) + the nav
+topology that scales multi-screen apps — reconciled into one gate.
+
+- **Nav contract: sections mesh, leaves climb** — replaces the old full-mesh nav
+  (which blew up N² on per-record detail screens). An optional `screens[].parent`
+  splits screens into SECTIONS (no parent — co-equal tabs meshing to peers) and
+  LEAVES (a detail/step whose `nav` carries only ancestor back-links, default one
+  back button); parent graph acyclic + rooted. Forward/lateral jumps live in
+  content regions and their `events[]` row carries `target:<screen-id>`. Every
+  leaf must be reachable (a forward `nav:` link or an `events[].target`) — a dead
+  leaf FAILs. Lands across check-app + APP_MODEL §multi-screen + BUILDER + the
+  rasa.app.v1 schema (`parent`/`target`).
+- **card-strip `on_click` is a dead handler → hard FAIL** (the shell renders
+  card-strip clicks inert; use card-list). Dropped from the event harvest too.
+- New golden `examples/task-backlog` demonstrates LIST_DETAIL (`card-list`
+  `open:<id>` → detail leaves) and passes check-app AND the real kernel
+  `validateLayout`; check-doctrine now gates every golden. Five new nav fixtures
+  (`leaf-missing-back`, `leaf-nav-to-sibling`, `parent-cycle`, `unreachable-leaf`,
+  `card-strip-onclick`). The design spec lands in `docs/page-creation-standard.md`.
+- **Staged for a follow-up authoring pass (NOT in this merge):** the LIST_DETAIL
+  pattern → `content/PATTERNS.md`, the SCAFFOLD process, and the `open:*` gate
+  invariant (see `docs/page-creation-standard.md` §1–4).
+
+## 0.6.1 — 2026-07-12
+
+Phase C hardening — the remaining gate + recovery gaps.
+
+- **data_sources tenant-containment** (check-app): reject absolute paths and
+  paths that escape the tenant root (>3 levels up from the app dir). Was
+  doctrine-only and unenforced (security-adjacent). New fixture `data-source-escape`.
+- **Write-order is an order, not a transaction** (APP_MODEL): the non-atomicity
+  is documented honestly; REBUILD gains an integrity pass (`check-app` on session
+  start) so a fresh or interrupted session repairs the directory to GREEN before
+  trusting the canvas — files-are-truth recovery, not atomicity.
+- **Gate bypass is loud now** (PROCESSES §gate): an unreachable-mount publish must
+  announce itself UNCHECKED, hand-verify the envelope, and re-check next turn
+  (closes fully when KERNEL_ASKS #9 lands).
+
+## 0.6.0 — 2026-07-12
+
+Reconciled to canon — the enforcement layer now validates the REAL kernel
+contract. Ground truth (kernel + frontend-rasaos + RasaOS/schema on disk) showed
+the doctrine validated a fictional flat-regions layout the kernel would reject;
+canon v1.4.0 absorbed the canvas family (doc 10 v1.1: the layout_grid+slot
+envelope, 22 components incl. html-embed, per-profile Appendix B incl. the B.2
+canvas dialect; Spec §56), and this release conforms the element to it.
+
+- **Vendored `schemas/rasa.layout.v1.json`** (== RasaOS/schema 0.3.0 == kernel).
+  check-app loads its constraint values so it cannot drift from the published schema.
+- **check-app is a real gate now.** GREEN means "canvas_set accepts this AND it
+  renders": required `screen.layout_grid` + region `slot`, name/id `^[a-z][a-z0-9-]*`,
+  title ≤60; components HARD-failed against the real 12-name allowlist (was 21 + a
+  soft warn); kernel `validator.ts` caps (256KB layout / 64 regions / dup-region-id —
+  the old 32KB is now a soft density warn); per-component required props (canon
+  Appendix B.2). Golden passes check-app AND the real kernel `validateLayout`.
+- **Allowlist 21→12** in `_contract.py` + COMPONENTS.md; allowlist == shell-rendered;
+  non-allowlisted is rejected, not error-tiled. `html-embed` is first-class.
+- **Doctrine text reconciled** (COMPONENTS.md): canonical prop keys (content, id,
+  `data:[{label,value}]`, events, subtitle, button-row intent→id precedence,
+  media-viewer = http(s) link not a data-URI embed); layout-doc def gains
+  layout_grid+slot; artifact section updated.
+- **Golden + fixtures reshaped** to the real envelope; 4 new negative fixtures
+  (no-layout-grid, no-slot, bad-component, bad-props) prove the new teeth.
+- KERNEL_ASKS #3 (html-embed) + #10 (kernel-side validation) + #5 (size limits)
+  marked resolved against the shipped kernel.
+
+## 0.5.3 — 2026-07-11
+
+### Completed the SA-023 `orchestrator`→`domain` content re-role (deferred at v0.5.0)
+
+- **Identity strings.** Renamed the residual `rasa.orchestrator.canvas` identity
+  strings → `rasa.domain.canvas` across the doc titles (CLAUDE.md, README.md,
+  this file), `rasa.json` (`session_model` element key + `tenant_model`
+  composition target), and the published schema `$id` (dead
+  `RasaOS/orchestrator-canvas` repo path → `RasaOS/domain-canvas`).
+- **Role-noun.** Folded the self-describing noun "orchestrator" → "domain" where
+  it names what this element *is* (README, CLAUDE.md, rasa.json, KERNEL_ASKS.md);
+  the behavior verb "orchestrates" stays. This element is a `domain` — SA-023
+  folded the orchestrator *kind* into `tenant`.
+- The v0.5.0 historical entry is preserved verbatim.
 
 ## 0.5.3 — 2026-07-11
 

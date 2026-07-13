@@ -1,0 +1,41 @@
+{
+  "layout": "1.0.0",
+  "screen": {
+    "name": "detail-task-1042",
+    "title": "Fix auth redirect",
+    "layout_grid": "full",
+    "ai_rail_inherited": true
+  },
+  "regions": [
+    {
+      "id": "nav",
+      "component": "button-row",
+      "props": {
+        "buttons": [
+          {
+            "id": "nav:backlog",
+            "label": "\u2190 Backlog"
+          }
+        ]
+      },
+      "slot": "main"
+    },
+    {
+      "id": "priority",
+      "component": "kpi-tile",
+      "props": {
+        "value": "high",
+        "label": "Priority"
+      },
+      "slot": "main"
+    },
+    {
+      "id": "body",
+      "component": "markdown-block",
+      "props": {
+        "content": "**Status:** open\n\nRedirect drops the `return_to` param after SSO, landing the user on the dashboard instead of the page they requested."
+      },
+      "slot": "main"
+    }
+  ]
+}

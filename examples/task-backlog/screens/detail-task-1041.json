@@ -1,0 +1,41 @@
+{
+  "layout": "1.0.0",
+  "screen": {
+    "name": "detail-task-1041",
+    "title": "Ship canvas gate",
+    "layout_grid": "full",
+    "ai_rail_inherited": true
+  },
+  "regions": [
+    {
+      "id": "nav",
+      "component": "button-row",
+      "props": {
+        "buttons": [
+          {
+            "id": "nav:backlog",
+            "label": "\u2190 Backlog"
+          }
+        ]
+      },
+      "slot": "main"
+    },
+    {
+      "id": "priority",
+      "component": "kpi-tile",
+      "props": {
+        "value": "med",
+        "label": "Priority"
+      },
+      "slot": "main"
+    },
+    {
+      "id": "body",
+      "component": "markdown-block",
+      "props": {
+        "content": "**Status:** in progress\n\nWire `bin/check-app` into the publish gate so a red check blocks `canvas_set`."
+      },
+      "slot": "main"
+    }
+  ]
+}

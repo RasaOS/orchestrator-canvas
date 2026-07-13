@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/RasaOS/orchestrator-canvas/main/schemas/rasa.app.v1.schema.json",
+  "$id": "https://raw.githubusercontent.com/RasaOS/domain-canvas/main/schemas/rasa.app.v1.schema.json",
   "title": "rasa.app.v1 — canvas app manifest (app.json)",
   "description": "The manifest every canvas app directory carries. Shape contract only — cross-field law (registry exhaustiveness, event coverage, nav targets) is audited by bin/check-app per content/APP_MODEL.md.",
   "type": "object",
@@ -31,7 +31,12 @@
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
           "title": { "type": "string", "minLength": 1 },
-          "default": { "type": "boolean" }
+          "default": { "type": "boolean" },
+          "parent": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+            "description": "if present, this screen is a LEAF/detail whose single structural back-target is this (registered, acyclic, rooted) screen id; absent = a top-level SECTION. Nav classes derive from presence/absence; the parent-graph + nav-region law is enforced by bin/check-app per content/APP_MODEL.md"
+          }
         }
       }
     },
@@ -66,7 +71,12 @@
             "items": { "type": "string" },
             "description": "region id(s) that emit this action"
           },
-          "handling": { "type": "string", "minLength": 1, "description": "what the user was promised — the declared behavior" }
+          "handling": { "type": "string", "minLength": 1, "description": "what the user was promised — the declared behavior" },
+          "target": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+            "description": "for a switch/spawn action (a list card opening a detail, a wizard 'next'), the screen id it navigates to — makes forward-reachability of leaf screens machine-checkable by bin/check-app; must be a registered screen. Omit for in-place EVENT actions and structural nav:<id> buttons"
+          }
         }
       }
     }

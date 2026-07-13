@@ -79,8 +79,11 @@ tree, which makes that tenant your parent and your principal. Concretely:
 - Mixing is normal: KPI strip + table declaratively, one artifact hero region
   for the custom visualization.
 - **Multi-screen:** the app may own many screens; all live as files, exactly
-  one (`active_screen`) is on the canvas. Siblings are reachable through the
-  nav contract (APP_MODEL.md §multi-screen); switching = SWITCH_SCREEN.
+  one (`active_screen`) is on the canvas. Screens are **sections** (co-equal
+  tabs — they mesh) or **leaves** (a detail/step with a `parent` — one back
+  button up the chain); forward/descend links live in content regions, and a
+  switch/spawn action carries `target:<screen-id>`. Reachability + back are
+  machine-checked (APP_MODEL.md §multi-screen); switching = SWITCH_SCREEN.
 
 ## Interaction doctrine
 

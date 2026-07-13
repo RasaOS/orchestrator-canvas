@@ -1,0 +1,16 @@
+{
+  "layout": "1.0.0",
+  "screen": {
+    "name": "home",
+    "title": "Home",
+    "layout_grid": "full"
+  },
+  "regions": [
+    {
+      "id": "board",
+      "slot": "main",
+      "component": "kanban",
+      "props": {}
+    }
+  ]
+}

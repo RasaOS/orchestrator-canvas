@@ -1,0 +1,19 @@
+{
+  "layout": "1.0.0",
+  "screen": {
+    "name": "home",
+    "title": "Home",
+    "layout_grid": "full",
+    "ai_rail_inherited": true
+  },
+  "regions": [
+    {
+      "id": "body",
+      "component": "markdown-block",
+      "props": {
+        "content": "Home links nowhere \u2014 the registered leaf `stray` has no forward `nav:` link and no events[] target, so it is a dead screen. check-app must RED this."
+      },
+      "slot": "main"
+    }
+  ]
+}

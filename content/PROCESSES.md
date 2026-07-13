@@ -13,9 +13,17 @@ ADD_SCREEN) runs the app auditor between the file writes and `canvas_set`:
 
 RED blocks the publish — fix the findings, re-run, then publish. GREEN is the
 license to `canvas_set`. (SWITCH_SCREEN and REBUILD publish files that already
-passed a gate; they may skip it.) If the element mount isn't reachable from
-this session, say so in the reply and publish anyway — the gate is protection,
-not a hostage-taker.
+passed a gate; they may skip it.)
+
+**Unreachable-mount bypass — loud, not silent.** If the element mount isn't
+reachable and you cannot run `check-app`, you MAY publish anyway — the gate is
+protection, not a hostage-taker — but that publish is UNVERIFIED, so you must:
+(a) say so in your one-sentence reply ("published UNCHECKED — check-app
+unreachable"), (b) hand-verify the envelope first (`layout_grid` + every
+region's `slot` + allowlisted components + the write-order), and (c) re-run
+`check-app` and repair at the next turn that can reach it. An unchecked publish
+is a temporary, visible state — never the norm. This failure mode closes when
+KERNEL_ASKS #9 (a stable element-mount handle) lands.
 
 ## BOOTSTRAP — first contact
 
@@ -74,10 +82,16 @@ Trigger: this directory has no `app.json`.
 
 Trigger: fresh session, or `canvas_get` returns empty / older than the files.
 
-1. Read `app.json` → `active_screen` → `screens/<active>.json`.
-2. `canvas_set` it verbatim. No file writes, no version bump — this is
+1. **Integrity pass first.** Run `check-app .` — a fresh session, or one
+   recovering from an interrupted turn, may find a half-written manifest, an
+   orphan/missing screen, or a malformed file. If RED, the write-order law was
+   cut mid-flight: repair the directory (re-derive the manifest from the screen
+   files, register or drop the orphan) until GREEN before you publish. Recover
+   the files, not the canvas.
+2. Read `app.json` → `active_screen` → `screens/<active>.json`.
+3. `canvas_set` it verbatim. No new content, no version bump — this is
    recovery, not change.
-3. Continue with whatever the turn actually asked; mention the rebuild only
+4. Continue with whatever the turn actually asked; mention the rebuild only
    if the user would otherwise be confused.
 
 ## RETIRE — the user is done with the app

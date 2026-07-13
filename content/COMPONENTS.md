@@ -1,40 +1,52 @@
 # The component contract — what a canvas region may be
 
-The layout document is `rasa.layout.v1`:
+The layout document is `rasa.layout.v1` (canon doc 10 Appendix A):
 
 ```json
 { "layout": "1.0.0",
-  "screen": { "name": "orders", "title": "Orders" },
-  "regions": [ { "id": "kpis", "component": "kpi-tile", "props": { } } ] }
+  "screen": { "name": "orders", "title": "Orders", "layout_grid": "full", "ai_rail_inherited": true },
+  "regions": [ { "id": "kpis", "slot": "main", "component": "kpi-tile", "props": { } } ] }
 ```
 
-Regions flow vertically unless a region carries `frame {x,y,w,h}` (absolute,
-canvas-local px; overlap legal; z = document order).
+`screen.layout_grid` (one of `full · sidebar-main · sidebar-main-rail · two-col ·
+three-col · dashboard`) and each region's `slot` are **required** — `canvas_set`
+rejects a layout missing either. The canvas shell renders a flex column and
+honors `frame` (it does not lay out by grid/slot yet), so `layout_grid:"full"` +
+`slot:"main"` is the honest default: the fields satisfy the shared envelope and
+map onto the grid model as the shell grows. `ai_rail_inherited: true` marks the
+canvas as ai-rail-by-construction (FE-005 per-profile — the conversation is the
+rail). Regions flow vertically unless a region carries `frame {x,y,w,h}`
+(absolute, canvas-local px; overlap legal; z = document order).
 
 ## Kernel allowlist (canvas_set validates component names)
 
-`card-strip · inbox-list · matter-detail · doc-viewer · table · chart ·
-kanban · timeline · kpi-tile · filter-bar · nav · modal · form ·
-calendar-grid · media-viewer · code-block · ai-rail · map ·
-markdown-block · button-row · card-list`
+`card-strip · table · form · chart · code-block · media-viewer · kpi-tile ·
+timeline · markdown-block · button-row · card-list · html-embed`
 
-The RasaOS shell currently RENDERS this subset (the rest error-tile —
-prefer these): `table · card-strip · card-list · form · chart · code-block ·
-media-viewer · kpi-tile · timeline · markdown-block · button-row`.
+These twelve are the operational allowlist `canvas_set` validates against
+(kernel `allowlist.ts`). A layout naming anything else is a **hard validation
+error at the write boundary — rejected, not rendered as an error tile.** The
+published `rasa.layout.v1` schema enum is broader (the full 22-name doc-10
+library); narrowing to these twelve is the kernel allowlist's job (canon Spec
+§56). The RasaOS shell RENDERS this subset — identical to the allowlist above
+(what the kernel accepts is exactly what renders): `card-strip · table · form ·
+chart · code-block · media-viewer · kpi-tile · timeline · markdown-block ·
+button-row · card-list · html-embed`.
 
-Prop shapes the shell renders — author to these EXACT keys (the shell reads
-them literally; the wrong key renders EMPTY, not an error). Legacy aliases in
-parens are tolerated by the renderer but prefer the canonical key:
+Prop shapes — the canvas inline dialect (canon Appendix B.2; check-app
+hard-gates the required prop of each):
 - **kpi-tile** `{value, label, delta?}`
-- **table** `{columns: [string | {key,label}], rows: [[]|{}]}`
-- **card-strip** `{cards: [{title, subtitle?}]}` — presentational only; card clicks do nothing (use card-list for clickable cards)
-- **card-list** `{cards: [{title, subtitle?, on_click?}]}` (subtitle aliases `body`/`description`) — a card's `on_click` VALUE is the action it emits
-- **chart** `{data: [{label, value}]}` — horizontal bars (aliases: container `points`/`series`, item `name`/`x` for label, `y` for value)
-- **form** `{fields: [{id, label, type, placeholder?}], submit_label?}` → emits `submit` with `{<field-id>: value}` (field key `id` aliases `name`)
-- **timeline** `{events: [{at, label}]}` (aliases `items`)
-- **button-row** `{buttons: [{id, label}]}` → each click emits its `id`
-- **markdown-block** `{content}` (aliases `markdown`) · **code-block** `{language, code}`
-- **media-viewer** `{src}` — renders an http(s) `src` as a LINK only; it does NOT embed images (SA-027). For an inline image/chart, author an artifact (below).
+- **table** `{columns: [string | {key,label}], rows: [[] | {}]}`
+- **card-strip** `{cards: [{title, subtitle?}]}` · **card-list** `{cards: [{title, subtitle?, on_click?}]}`
+- **chart** `{data: [{label, value}]}` — the shell renders horizontal bars; `type`
+  is accepted but ignored (line/pie is a known shell gap)
+- **form** `{fields: [{id, label?, type?}], submit_label?}` → emits `submit` (values keyed by field `id`)
+- **timeline** `{events: [{at, label}]}`
+- **button-row** `{buttons: [{id, label?, intent?, style?}]}` → emits `intent` if
+  set, else `id`, else `on_click`; a `nav:<screen-id>` id drives SWITCH_SCREEN
+- **markdown-block** `{content}` · **code-block** `{code, language?, render?}`
+- **media-viewer** `{src}` — rendered as an http(s) **link, not an embed**; a
+  `data:` URI renders inert. For embedded image/video use an **html-embed** artifact.
 
 Interactions: any `on_click`/button/submit emits a `ui_event` turn back into
 this session as `[canvas] <action> (<region-id>)`.
@@ -46,17 +58,18 @@ ONE complete self-contained HTML document rendered by the shell in a
 **sandboxed iframe** (opaque origin, `allow-scripts` only — no parent DOM, no
 cookies/storage, no top navigation).
 
-Preferred form (pending SA-027 vocabulary addition):
+Preferred form — `html-embed` is **first-class now** (canon FE-002 v1.1 / SA-027;
+`html` ≤ 16 KB, `height` 120–2000):
 ```json
-{ "id": "hero", "component": "html-embed",
+{ "id": "hero", "slot": "main", "component": "html-embed",
   "props": { "html": "<!doctype html>…", "height": 460 } }
 ```
-**Carriage fallback** (the kernel currently rejects `html-embed` — use the
-allowlisted code-block; identical rendering):
+**Carriage alias** (the allowlisted `code-block` with `render:true` routes to the
+same sandboxed iframe — identical rendering; `html-embed` is canonical, this
+still works):
 ```json
-{ "id": "hero", "component": "code-block",
-  "props": { "language": "html", "code": "<!doctype html>…",
-             "render": true, "height": 460 } }
+{ "id": "hero", "slot": "main", "component": "code-block",
+  "props": { "code": "<!doctype html>…", "render": true, "height": 460 } }
 ```
 
 Artifact rules:

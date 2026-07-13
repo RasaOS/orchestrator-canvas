@@ -1,0 +1,16 @@
+{
+  "app": "rasa.app.v1",
+  "id": "parent-cycle",
+  "name": "Parent cycle, no root (must FAIL)",
+  "version": "0.1.0",
+  "created": "2026-07-12",
+  "screens": [
+    { "id": "a", "title": "A", "parent": "b" },
+    { "id": "b", "title": "B", "parent": "a" }
+  ],
+  "active_screen": "a",
+  "events": [
+    { "action": "nav:a", "emits": ["nav"], "handling": "SWITCH_SCREEN a" },
+    { "action": "nav:b", "emits": ["nav"], "handling": "SWITCH_SCREEN b" }
+  ]
+}

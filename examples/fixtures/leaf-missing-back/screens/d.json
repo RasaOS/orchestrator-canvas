@@ -1,0 +1,19 @@
+{
+  "layout": "1.0.0",
+  "screen": {
+    "name": "d",
+    "title": "Detail",
+    "layout_grid": "full",
+    "ai_rail_inherited": true
+  },
+  "regions": [
+    {
+      "id": "body",
+      "component": "markdown-block",
+      "props": {
+        "content": "A leaf with no `nav` region \u2014 no back button to its parent `home`. check-app must RED this."
+      },
+      "slot": "main"
+    }
+  ]
+}

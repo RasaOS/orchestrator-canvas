@@ -1,0 +1,38 @@
+{
+  "layout": "1.0.0",
+  "screen": {
+    "name": "backlog",
+    "title": "Backlog",
+    "layout_grid": "full",
+    "ai_rail_inherited": true
+  },
+  "regions": [
+    {
+      "id": "intro",
+      "component": "markdown-block",
+      "props": {
+        "content": "**Backlog** \u2014 open a task to see its detail. The list is the lone SECTION; each detail is a LEAF with `parent: backlog`."
+      },
+      "slot": "main"
+    },
+    {
+      "id": "tasks",
+      "component": "card-list",
+      "props": {
+        "cards": [
+          {
+            "title": "Fix auth redirect",
+            "subtitle": "open \u00b7 high",
+            "on_click": "open:task-1042"
+          },
+          {
+            "title": "Ship canvas gate",
+            "subtitle": "in progress \u00b7 med",
+            "on_click": "open:task-1041"
+          }
+        ]
+      },
+      "slot": "main"
+    }
+  ]
+}

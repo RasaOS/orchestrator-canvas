@@ -1,11 +1,24 @@
 {
   "layout": "1.0.0",
-  "screen": { "name": "home", "title": "Home" },
+  "screen": {
+    "name": "home",
+    "title": "Home",
+    "layout_grid": "full",
+    "ai_rail_inherited": true
+  },
   "regions": [
     {
       "id": "actions",
       "component": "button-row",
-      "props": { "buttons": [ { "id": "do_thing", "label": "Do the thing" } ] }
+      "props": {
+        "buttons": [
+          {
+            "id": "do_thing",
+            "label": "Do the thing"
+          }
+        ]
+      },
+      "slot": "main"
     }
   ]
 }

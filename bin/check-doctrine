@@ -125,6 +125,13 @@ def check_schema():
         json.loads(text)
     except Exception as e:
         fail(f"schemas/rasa.app.v1.schema.json: not valid JSON ({e})")
+    # The vendored layout schema check-app loads its constraint values from.
+    ltext = read(ROOT / "schemas" / "rasa.layout.v1.json")
+    if ltext is not None:
+        try:
+            json.loads(ltext)["properties"]["screen"]["properties"]["layout_grid"]["enum"]
+        except Exception as e:
+            fail(f"schemas/rasa.layout.v1.json: invalid or missing layout_grid enum ({e}) — check-app loads it")
 
 
 def check_terseness(docs):
@@ -141,14 +148,15 @@ def run_check_app(app_dir):
 
 
 def check_fixture_gate():
-    golden = ROOT / "examples" / "orders-desk"
-    if not golden.is_dir():
+    examples = ROOT / "examples"
+    goldens = sorted(p for p in examples.glob("*") if p.is_dir() and p.name != "fixtures")
+    if not any(g.name == "orders-desk" for g in goldens):
         fail("examples/orders-desk: golden example missing")
-    else:
-        r = run_check_app(golden)
+    for g in goldens:
+        r = run_check_app(g)
         if r.returncode != 0:
-            fail(f"golden example fails check-app:\n{r.stdout.strip()}")
-    fixtures = sorted(p for p in (ROOT / "examples" / "fixtures").glob("*") if p.is_dir())
+            fail(f"golden example '{g.name}' fails check-app:\n{r.stdout.strip()}")
+    fixtures = sorted(p for p in (examples / "fixtures").glob("*") if p.is_dir())
     if not fixtures:
         fail("examples/fixtures: no negative fixtures found")
     for f in fixtures:

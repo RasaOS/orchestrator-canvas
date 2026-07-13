@@ -1,7 +1,19 @@
 {
   "layout": "1.0.0",
-  "screen": { "name": "extra", "title": "Extra" },
+  "screen": {
+    "name": "extra",
+    "title": "Extra",
+    "layout_grid": "full",
+    "ai_rail_inherited": true
+  },
   "regions": [
-    { "id": "notes", "component": "markdown-block", "props": { "markdown": "orphan" } }
+    {
+      "id": "notes",
+      "component": "markdown-block",
+      "props": {
+        "content": "orphan"
+      },
+      "slot": "main"
+    }
   ]
 }

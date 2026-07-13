@@ -1,21 +1,24 @@
 {
   "layout": "1.0.0",
-  "screen": { "name": "home", "title": "Overview" },
+  "screen": { "name": "home", "title": "Overview", "layout_grid": "full", "ai_rail_inherited": true },
   "regions": [
     {
       "id": "nav",
+      "slot": "main",
       "component": "button-row",
       "props": { "buttons": [ { "id": "nav:orders", "label": "Orders" } ] }
     },
     {
       "id": "kpis",
+      "slot": "main",
       "component": "kpi-tile",
       "props": { "value": "12", "label": "Open orders", "delta": "+3 this week" }
     },
     {
       "id": "notes",
+      "slot": "main",
       "component": "markdown-block",
-      "props": { "markdown": "**Orders Desk** — numbers derive from `data/orders.csv` (see `data/orders-summary.json` for the derivation stamp)." }
+      "props": { "content": "**Orders Desk** — numbers derive from `data/orders.csv` (see `data/orders-summary.json` for the derivation stamp)." }
     }
   ]
 }

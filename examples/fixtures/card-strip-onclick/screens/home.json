@@ -1,0 +1,25 @@
+{
+  "layout": "1.0.0",
+  "screen": {
+    "name": "home",
+    "title": "Home",
+    "layout_grid": "full",
+    "ai_rail_inherited": true
+  },
+  "regions": [
+    {
+      "id": "cards",
+      "component": "card-strip",
+      "props": {
+        "cards": [
+          {
+            "title": "Meridian LLC",
+            "subtitle": "open",
+            "on_click": "open:meridian"
+          }
+        ]
+      },
+      "slot": "main"
+    }
+  ]
+}

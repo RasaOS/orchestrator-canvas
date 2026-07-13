@@ -1,0 +1,18 @@
+{
+  "app": "rasa.app.v1",
+  "id": "task-backlog",
+  "name": "Task Backlog",
+  "version": "0.1.0",
+  "created": "2026-07-12",
+  "screens": [
+    { "id": "backlog", "title": "Backlog", "default": true },
+    { "id": "detail-task-1042", "title": "Fix auth redirect", "parent": "backlog" },
+    { "id": "detail-task-1041", "title": "Ship canvas gate", "parent": "backlog" }
+  ],
+  "active_screen": "backlog",
+  "events": [
+    { "action": "open:task-1042", "emits": ["tasks"], "handling": "reuse or author detail-task-1042 bound to task 1042, then SWITCH_SCREEN to it", "target": "detail-task-1042" },
+    { "action": "open:task-1041", "emits": ["tasks"], "handling": "reuse or author detail-task-1041 bound to task 1041, then SWITCH_SCREEN to it", "target": "detail-task-1041" },
+    { "action": "nav:backlog", "emits": ["nav"], "handling": "SWITCH_SCREEN backlog" }
+  ]
+}

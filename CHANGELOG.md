@@ -85,6 +85,32 @@ canvas dialect; Spec §56), and this release conforms the element to it.
   folded the orchestrator *kind* into `tenant`.
 - The v0.5.0 historical entry is preserved verbatim.
 
+## 0.5.3 — 2026-07-11
+
+### Reconcile COMPONENTS.md prop keys to the shell renderer (canvas wiring audit)
+
+The 2026-07-11 CanvasOS wiring audit (frontend-rasaos
+`docs/audits/2026-07-11-canvasos-wiring-audit.md`) found the doctrine's
+documented prop keys had drifted from what the shell renderer actually reads —
+so a layout authored strictly to `content/COMPONENTS.md` rendered **empty**
+(no error tile — the kernel validates only the component name). Every drifted
+component reconciled to the renderer's canonical key:
+
+- **markdown-block** `{markdown}` → `{content}`
+- **chart** `{type, series/points, labels}` → `{data: [{label, value}]}`
+- **timeline** `{items: [{label, detail?, at?}]}` → `{events: [{at, label}]}`
+- **form** field key `{name}` → `{id}`, and the emitted action stated as `submit`
+  with `{<field-id>: value}` (an empty-`name` form was silently submitting `{}`)
+- **card-strip / card-list** `{cards: [{body?/description?}]}` → `{subtitle?}`;
+  card-strip documented as presentational-only (its `on_click` was dead), the
+  per-card `on_click` VALUE named as the emitted action
+- **media-viewer** doctrine corrected — renders an http(s) `src` as a link only,
+  never an inline/`data:` image
+
+The frontend shipped matching renderer aliases (v0.8.10) so layouts authored to
+the OLD doctrine degrade gracefully instead of blanking; this change fixes the
+authoring source so new builds are correct at the root.
+
 ## 0.5.2 — 2026-07-09
 
 ### Element identity layer (canon SA-025)

@@ -1,0 +1,17 @@
+{
+  "layout": "1.0.0",
+  "screen": {
+    "name": "home",
+    "title": "Home"
+  },
+  "regions": [
+    {
+      "id": "notes",
+      "slot": "main",
+      "component": "markdown-block",
+      "props": {
+        "content": "hi"
+      }
+    }
+  ]
+}

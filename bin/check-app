@@ -7,15 +7,18 @@ Checks (FAIL = red, blocks publish; WARN = advisory):
   - app.json shape (rasa.app.v1, kebab id, semver, required fields)
   - screens[] registry exhaustive both ways (no orphan files, no missing files)
   - active_screen registered; at most one default screen
-  - each screen file: valid rasa.layout.v1, screen.name == screen id,
-    unique region ids, components in the kernel allowlist (warn outside the
-    shell-rendered subset)
+  - each screen file (canon rasa.layout.v1): screen.name == screen id +
+    ^[a-z][a-z0-9-]* pattern, title <=60, layout_grid present + in the schema
+    enum; each region has a slot + valid unique id; components hard-gated to
+    the kernel allowlist (canvas_set rejects anything else); per-component
+    required props (canon Appendix B.2); html-embed size + height
   - event coverage: every emittable action (button-row ids, card on_click,
     form submit, artifact rasa.emit calls) registered in app.json#events;
     stale registry rows warned
   - nav contract on multi-screen apps: a button-row 'nav' region reaching
     every sibling; nav:* targets are registered screens
-  - size budgets: layout warn >28KB fail >32KB; artifact warn >10KB fail >16KB
+  - caps (kernel-enforced — canvas_set rejects above): layout warn >32KB
+    fail >256KB; <=64 regions; artifact warn >10KB fail >16KB
   - state/*.json parse; data/*.json carry _source/_derived_at stamps
 
 Exit 0 = GREEN (warnings allowed), 1 = RED, 2 = usage error.
@@ -26,15 +29,47 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _contract import KERNEL_ALLOWLIST, SHELL_RENDERED
+from _contract import KERNEL_ALLOWLIST
 
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 KEBAB = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+LAYOUT_ID = re.compile(r"^[a-z][a-z0-9-]*$")   # kernel schema: screen.name / region.id
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 EMIT = re.compile(r"rasa\s*\.\s*emit\s*\(\s*['\"]([^'\"]+)['\"]")
 
-LAYOUT_WARN, LAYOUT_FAIL = 28 * 1024, 32 * 1024
-ARTIFACT_WARN, ARTIFACT_FAIL = 10 * 1024, 16 * 1024
+# Size + count caps. The hard caps are the KERNEL's (validator.ts): a layout
+# above them is rejected by canvas_set. The soft warns are the element's own
+# density guidance, well under the kernel ceiling.
+LAYOUT_WARN, LAYOUT_FAIL = 32 * 1024, 256 * 1024     # kernel MAX_LAYOUT_BYTES
+ARTIFACT_WARN, ARTIFACT_FAIL = 10 * 1024, 16 * 1024  # kernel html-embed maxLength
+MAX_REGIONS = 64                                     # kernel MAX_REGIONS
+TITLE_MAX = 60                                       # schema screen.title maxLength
+
+# Constraint values pulled from the vendored published schema so check-app can't
+# drift from it (schemas/rasa.layout.v1.json == RasaOS/schema == kernel copy).
+_SCHEMA = json.loads(
+    (Path(__file__).resolve().parent.parent / "schemas" / "rasa.layout.v1.json").read_text()
+)
+LAYOUT_GRIDS = set(_SCHEMA["properties"]["screen"]["properties"]["layout_grid"]["enum"])
+
+# Canon Appendix B.2 (conversational-canvas inline dialect) — required props per
+# component, as (prop, kind) with kind in {"any","str","list"}. Hard-gated: the
+# kernel leaves props open, but canon B.2 specifies them and GREEN must mean
+# "renders correctly", not just "canvas_set accepts it".
+B2_REQUIRED = {
+    "table":          [("columns", "list"), ("rows", "list")],
+    "kpi-tile":       [("value", "any"), ("label", "any")],
+    "chart":          [("data", "list")],
+    "timeline":       [("events", "list")],
+    "form":           [("fields", "list")],
+    "card-strip":     [("cards", "list")],
+    "card-list":      [("cards", "list")],
+    "button-row":     [("buttons", "list")],
+    "markdown-block": [("content", "str")],
+    "code-block":     [("code", "str")],
+    "media-viewer":   [("src", "str")],
+    "html-embed":     [("html", "str")],
+}
 
 findings = []
 
@@ -130,6 +165,26 @@ def check_events_registry(m):
     return reg
 
 
+def _artifact_size(path, rid, n):
+    if n > ARTIFACT_FAIL:
+        fail(f"{path.name}#{rid}: artifact is {n}B — exceeds the {ARTIFACT_FAIL}B kernel cap")
+    elif n > ARTIFACT_WARN:
+        warn(f"{path.name}#{rid}: artifact is {n}B — over the ~10KB budget")
+
+
+def check_props(path, rid, comp, props):
+    """Canon Appendix B.2 required-prop gate for the canvas inline dialect."""
+    for prop, kind in B2_REQUIRED.get(comp, []):
+        v = props.get(prop)
+        if v is None or v == "" or v == [] or v == {}:
+            fail(f"{path.name}#{rid}: {comp} missing required prop '{prop}' (canon Appendix B.2)")
+            continue
+        if kind == "list" and not isinstance(v, list):
+            fail(f"{path.name}#{rid}: {comp}.{prop} must be a list")
+        elif kind == "str" and not isinstance(v, str):
+            fail(f"{path.name}#{rid}: {comp}.{prop} must be a string")
+
+
 def check_screen_file(path, sid, ids):
     """Returns (actions, region_ids) or (set(), set()) on parse failure."""
     doc = load_json(path)
@@ -138,14 +193,27 @@ def check_screen_file(path, sid, ids):
     if doc.get("layout") != "1.0.0":
         warn(f"{path.name}: layout version '{doc.get('layout')}' (expected '1.0.0')")
     scr = doc.get("screen") or {}
-    if scr.get("name") != sid:
-        fail(f"{path.name}: screen.name '{scr.get('name')}' must equal the screen id '{sid}'")
-    if not scr.get("title"):
+    name = scr.get("name")
+    if name != sid:
+        fail(f"{path.name}: screen.name '{name}' must equal the screen id '{sid}'")
+    if name and not LAYOUT_ID.match(str(name)):
+        fail(f"{path.name}: screen.name '{name}' must match ^[a-z][a-z0-9-]*$ (kernel schema)")
+    title = scr.get("title")
+    if not title:
         fail(f"{path.name}: screen.title missing")
+    elif len(str(title)) > TITLE_MAX:
+        fail(f"{path.name}: screen.title exceeds {TITLE_MAX} chars (schema)")
+    grid = scr.get("layout_grid")
+    if not grid:
+        fail(f"{path.name}: screen.layout_grid missing — required by canvas_set (rasa.layout.v1)")
+    elif grid not in LAYOUT_GRIDS:
+        fail(f"{path.name}: screen.layout_grid '{grid}' not one of {sorted(LAYOUT_GRIDS)}")
     regions = doc.get("regions")
     if not isinstance(regions, list) or not regions:
         fail(f"{path.name}: regions[] missing or empty")
         return set(), set()
+    if len(regions) > MAX_REGIONS:
+        fail(f"{path.name}: {len(regions)} regions — exceeds the kernel cap of {MAX_REGIONS}")
 
     rids = []
     for r in regions:
@@ -156,24 +224,29 @@ def check_screen_file(path, sid, ids):
         if rid in rids:
             fail(f"{path.name}: duplicate region id '{rid}'")
         rids.append(rid)
+        if not LAYOUT_ID.match(str(rid)):
+            fail(f"{path.name}#{rid}: region id must match ^[a-z][a-z0-9-]*$ (kernel schema)")
+        if not r.get("slot"):
+            fail(f"{path.name}#{rid}: region.slot missing — required by canvas_set (rasa.layout.v1)")
         comp = r.get("component")
         props = r.get("props") or {}
         if comp not in KERNEL_ALLOWLIST:
-            fail(f"{path.name}#{rid}: component '{comp}' is not in the kernel allowlist")
-        elif comp not in SHELL_RENDERED:
-            warn(f"{path.name}#{rid}: '{comp}' is allowlisted but the shell error-tiles it — prefer the rendered subset")
-        if comp == "code-block" and props.get("render"):
-            n = len(str(props.get("code", "")).encode())
-            if n > ARTIFACT_FAIL:
-                fail(f"{path.name}#{rid}: artifact is {n}B — exceeds the {ARTIFACT_FAIL}B hard cap")
-            elif n > ARTIFACT_WARN:
-                warn(f"{path.name}#{rid}: artifact is {n}B — over the ~10KB budget")
+            fail(f"{path.name}#{rid}: component '{comp}' is not in the kernel allowlist — canvas_set rejects it")
+        else:
+            check_props(path, rid, comp, props)
+        if comp == "html-embed":
+            _artifact_size(path, rid, len(str(props.get("html", "")).encode()))
+            h = props.get("height")
+            if h is not None and (isinstance(h, bool) or not isinstance(h, (int, float)) or not 120 <= h <= 2000):
+                fail(f"{path.name}#{rid}: html-embed height {h!r} out of range 120–2000 (schema)")
+        elif comp == "code-block" and props.get("render"):
+            _artifact_size(path, rid, len(str(props.get("code", "")).encode()))
 
     n = path.stat().st_size
     if n > LAYOUT_FAIL:
-        fail(f"{path.name}: layout is {n}B — exceeds the {LAYOUT_FAIL}B hard cap")
+        fail(f"{path.name}: layout is {n}B — exceeds the kernel {LAYOUT_FAIL}B cap (canvas_set rejects)")
     elif n > LAYOUT_WARN:
-        warn(f"{path.name}: layout is {n}B — nearing the ~32KB cap")
+        warn(f"{path.name}: layout is {n}B — over the ~32KB density budget")
 
     # nav contract (multi-screen apps only)
     if len(ids) > 1:

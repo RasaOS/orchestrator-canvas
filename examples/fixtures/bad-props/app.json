@@ -1,0 +1,16 @@
+{
+  "app": "rasa.app.v1",
+  "id": "bad-props",
+  "name": "Bad Props",
+  "version": "0.1.0",
+  "created": "2026-07-12",
+  "screens": [
+    {
+      "id": "home",
+      "title": "Home",
+      "default": true
+    }
+  ],
+  "active_screen": "home",
+  "events": []
+}

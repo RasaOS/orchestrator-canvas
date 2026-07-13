@@ -1,0 +1,30 @@
+{
+  "app": "rasa.app.v1",
+  "id": "binding-unknown-module",
+  "name": "Binding Unknown Module (must fail: source.module not in context.json#modules)",
+  "version": "0.1.0",
+  "created": "2026-07-13",
+  "screens": [
+    {
+      "id": "home",
+      "title": "Home",
+      "default": true
+    }
+  ],
+  "active_screen": "home",
+  "events": [],
+  "bindings": [
+    {
+      "id": "ghost",
+      "region": "notes",
+      "screen": "home",
+      "source": {
+        "module": "rasa.module.ghost",
+        "collection": "stuff"
+      },
+      "shape": "folder-of-records",
+      "mode": "bound",
+      "direction": "read"
+    }
+  ]
+}

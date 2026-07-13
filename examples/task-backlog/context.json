@@ -1,0 +1,12 @@
+{
+  "_schema": "rasa.canvas.context.v1",
+  "_audited_at": "2026-07-13T00:00:00Z",
+  "_tenant_flavor": "holding-folder",
+  "_tenant_root": "../..",
+  "tenant": {
+    "name": "demo.tenant.backlog"
+  },
+  "domains": [],
+  "modules": [],
+  "tenant_data": []
+}

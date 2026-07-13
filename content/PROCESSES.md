@@ -30,7 +30,8 @@ KERNEL_ASKS #9 (a stable element-mount handle) lands.
 Trigger: this directory has no `app.json`.
 
 1. Scan the tenant: its `CLAUDE.md`, obvious data files, sibling apps, and
-   what the addressing turn says this app is for.
+   what the addressing turn says this app is for. Run AUDIT (§AUDIT) to write
+   `context.json` — the index of what exists to bind to.
 2. Write the skeleton: `app.json` (id from the directory name, one `home`
    screen marked default, version `0.1.0`), `CHANGELOG.md`, `screens/`,
    `state/`.
@@ -39,22 +40,57 @@ Trigger: this directory has no `app.json`.
    saying what the app is, plus a form asking for the first data source.
 4. Gate, publish (write order), reply.
 
+## AUDIT — build/refresh the context index
+
+Trigger: BOOTSTRAP · an explicit "what can I bind to?" turn · a binding/data
+target that fails to resolve · the roster looks newer than
+`context.json#_audited_at`. Reads siblings, never writes them; produces one
+file: `context.json` (schema `rasa.canvas.context.v1`).
+
+1. Determine the tenant flavor STRUCTURALLY — never from the mere presence of
+   `elements/`: a `.rasa/holding/` dir → `holding-folder`; the tenant's
+   `rasa.json` declares `tenant.members[]` → `co-located`; `elements/` full
+   clones with no holding dir → `canon-author`.
+2. Locate the roster: holding-folder + canon-author → `<tenant>/elements/*/`;
+   co-located → the member repos beside the tenant root.
+3. Record the parent tenant (name + `CLAUDE.md` path), then each sibling
+   element's `rasa.json` → name, version, kind, `requires.parent_kind`.
+4. For each module, discover `collections[]` **seam-first**: (a) the module's
+   seeded seam/config file when one exists (read it FIRST); (b) its `rasa.json`
+   seed/scaffold declarations; (c) inference from its layout + sample records.
+   Record dir, shape, record `file_glob`, per-field types where inferable,
+   `states` (subdirs in lifecycle order), and `writable`.
+5. Note tenant data files reachable from the tenant root.
+6. Write `context.json` with `_audited_at` + `_tenant_flavor`. Per-install and
+   disposable — the index plans; files decide, so re-read sources before any
+   publish regardless.
+
 ## BUILD — the user asks for UI, or a change to it
 
-1. `canvas_get`; read `app.json`, the affected screen file(s), and any tenant
-   data the request touches.
-2. Author the change in the screen file(s). Any new action gets its
-   `app.json#events` row in the same edit.
-3. Bump `app.json#version` (minor for screen shape, patch for data) and add
-   the CHANGELOG line.
-4. Gate, then publish the active screen (write order), reply.
+1. `canvas_get`; read `app.json`, `context.json`, the affected screen file(s),
+   and any data the request touches.
+2. Resolve the request's data to a binding mode (BUILDER §binding-modes):
+   **bound** → register/reuse the `bindings[]` row; **derived** → snapshot to
+   `data/` (with `_source`/`_derived_at`) and bind to it; **provision** →
+   create the records first (write-order step 1), add the writer event if
+   read-write, then register the binding.
+3. Author the change in the screen file(s). Any new action gets its
+   `app.json#events` row (+ `writes[]` if it mutates) in the same edit.
+4. Bump `app.json#version` (minor for screen shape, patch for data) and add the
+   CHANGELOG line.
+5. Gate, then publish the active screen (write order), reply.
 
 ## EVENT — a `[canvas] <action> (<region>)` turn arrives
 
 1. Look the action up in `app.json#events`. Found → execute the declared
    handling exactly. Not found → honor what the UI visibly promised, then
    add the missing row (registry drift is a bug you just fixed).
-2. Apply state changes to `state/` files first.
+2. Execute the row's `writes[]` in write-order. **Bound-collection entries
+   first** (`{binding, op, field?}`): if the owning module DECLARES a write
+   procedure for the op (its skills/rules, found via the seam during AUDIT),
+   follow it — the module's skill is its write API; otherwise write directly,
+   matching the module's record conventions, and only on collections
+   `context.json` marks `writable`. **Then `{state}` entries** to `state/`.
 3. Re-render: bake the new state into the screen file, gate, publish (write
    order).
 4. Reply — unless the action is `nav:*`, which is SWITCH_SCREEN, not EVENT.

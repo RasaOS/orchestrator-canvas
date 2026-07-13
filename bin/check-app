@@ -394,6 +394,163 @@ def check_screen_file(path, sid, ids, parent_of, roots):
     return screen_actions(doc), set(rids), forward
 
 
+def escapes_root(app_rel_path, tenant_root_rel):
+    """True if app_rel_path (relative to the app dir) resolves OUTSIDE the
+    tenant root (also app-relative). Lexical + deep-anchored so realistic
+    '..' counts don't clamp at filesystem root."""
+    anchor = "/" + "/".join(f"d{i}" for i in range(24)) + "/app"
+    root = posixpath.normpath(posixpath.join(anchor, str(tenant_root_rel)))
+    target = posixpath.normpath(posixpath.join(anchor, str(app_rel_path)))
+    return not (target == root or target.startswith(root + "/"))
+
+
+CONTEXT_FLAVORS = ("holding-folder", "co-located", "canon-author")
+
+
+def check_context(app):
+    """context.json — the AUDIT index (rasa.canvas.context.v1). Warn when
+    absent (audit not yet run); structurally validate when present.
+    Returns the parsed doc (or None) so check_bindings can resolve against it."""
+    p = app / "context.json"
+    if not p.is_file():
+        warn("context.json: missing — AUDIT not yet run (PROCESSES.md §AUDIT)")
+        return None
+    doc = load_json(p)
+    if doc is None:
+        return None
+    if not isinstance(doc, dict):
+        fail("context.json: not a JSON object")
+        return None
+    if doc.get("_schema") != "rasa.canvas.context.v1":
+        fail(f"context.json: _schema '{doc.get('_schema')}' — must be 'rasa.canvas.context.v1'")
+    if not doc.get("_audited_at"):
+        fail("context.json: _audited_at missing")
+    if doc.get("_tenant_flavor") not in CONTEXT_FLAVORS:
+        fail(f"context.json: _tenant_flavor '{doc.get('_tenant_flavor')}' — must be one of {'|'.join(CONTEXT_FLAVORS)}")
+    if not doc.get("_tenant_root"):
+        fail("context.json: _tenant_root missing")
+    for key in ("domains", "modules"):
+        for row in doc.get(key) or []:
+            if not isinstance(row, dict) or not row.get("name") or not row.get("path"):
+                fail(f"context.json#{key}: row without name+path")
+    for m in doc.get("modules") or []:
+        if not isinstance(m, dict):
+            continue
+        for c in m.get("collections") or []:
+            if not isinstance(c, dict) or not c.get("id") or not c.get("dir") or not c.get("shape"):
+                fail(f"context.json#modules['{m.get('name')}']: collection row without id+dir+shape")
+    return doc
+
+
+WRITE_OPS = ("create-record", "update-record", "move-record", "delete-record")
+
+
+def check_bindings(m, ids, screen_regions, context_doc):
+    """bindings[] — the binding registry (APP_MODEL.md §bindings).
+    Returns {binding id: row} for the writes[] cross-check."""
+    bids = {}
+    for b in m.get("bindings") or []:
+        if not isinstance(b, dict) or not b.get("id"):
+            fail("app.json#bindings: row without an id")
+            continue
+        bid = str(b["id"])
+        if bid in bids:
+            fail(f"app.json#bindings: duplicate binding id '{bid}'")
+        bids[bid] = b
+        scr, reg = b.get("screen"), b.get("region")
+        if scr not in ids:
+            fail(f"app.json#bindings['{bid}']: screen '{scr}' is not a registered screen")
+        elif reg not in screen_regions.get(scr, set()):
+            fail(f"app.json#bindings['{bid}']: region '{reg}' not found on screen '{scr}'")
+        src = b.get("source")
+        if not isinstance(src, dict):
+            fail(f"app.json#bindings['{bid}']: source must be an object")
+            continue
+        forms = [k for k in ("module", "tenant", "context") if src.get(k)]
+        if len(forms) != 1:
+            fail(f"app.json#bindings['{bid}']: source must be exactly one of "
+                 f"module+collection | tenant | context (got: {forms or 'none'})")
+        else:
+            allowed = {"module": {"module", "collection", "select"},
+                       "tenant": {"tenant"}, "context": {"context"}}[forms[0]]
+            extra = set(src) - allowed
+            if extra:
+                fail(f"app.json#bindings['{bid}']: source has key(s) not valid for a "
+                     f"'{forms[0]}' source: {', '.join(sorted(extra))}")
+        if src.get("tenant") and context_doc is not None:
+            tr = context_doc.get("_tenant_root")
+            if tr and escapes_root(src["tenant"], tr):
+                fail(f"app.json#bindings['{bid}']: source.tenant path '{src['tenant']}' "
+                     f"escapes the tenant root ('{tr}')")
+        if src.get("module"):
+            if not src.get("collection"):
+                fail(f"app.json#bindings['{bid}']: module source without a collection")
+            if context_doc is None:
+                warn(f"app.json#bindings['{bid}']: cannot resolve module "
+                     f"'{src['module']}' — context.json absent (run AUDIT)")
+            else:
+                mods = {str(mm.get("name")): mm
+                        for mm in (context_doc.get("modules") or []) if isinstance(mm, dict)}
+                mod = mods.get(str(src["module"]))
+                if mod is None:
+                    fail(f"app.json#bindings['{bid}']: source.module '{src['module']}' "
+                         f"is not in context.json#modules")
+                else:
+                    colls = {str(c.get("id")): c
+                             for c in (mod.get("collections") or []) if isinstance(c, dict)}
+                    cid = str(src.get("collection", "")).split("/")[0]
+                    coll = colls.get(cid)
+                    if coll is None:
+                        fail(f"app.json#bindings['{bid}']: collection '{src.get('collection')}' "
+                             f"is not declared by '{src['module']}' in context.json")
+                    elif b.get("direction") == "read-write" and not coll.get("writable"):
+                        fail(f"app.json#bindings['{bid}']: read-write on a collection "
+                             f"context.json does not mark writable")
+        sel = src.get("select")
+        if sel not in (None, "*"):
+            warn(f"app.json#bindings['{bid}']: select '{sel}' — v1 supports only '*'")
+        if b.get("mode") == "provision" and not b.get("provisioned"):
+            fail(f"app.json#bindings['{bid}']: mode 'provision' requires provisioned:true")
+    return bids
+
+
+def check_writes(m, bids):
+    """events[].writes[] — every target resolves; read-write bindings have a writer."""
+    writers = set()
+    for row in m.get("events") or []:
+        if not isinstance(row, dict):
+            continue
+        a = row.get("action")
+        for w in row.get("writes") or []:
+            if not isinstance(w, dict):
+                fail(f"app.json#events['{a}']: writes[] entry is not an object")
+                continue
+            if w.get("binding") and w.get("state"):
+                fail(f"app.json#events['{a}']: writes[] entry has both binding and "
+                     f"state — one target per entry")
+                continue
+            if w.get("binding"):
+                bref = str(w["binding"])
+                if bref not in bids:
+                    fail(f"app.json#events['{a}']: writes[] names unknown binding '{w['binding']}'")
+                else:
+                    writers.add(bref)
+                    if bids[bref].get("direction") != "read-write":
+                        fail(f"app.json#events['{a}']: writes[] targets binding '{bref}' "
+                             f"which is not read-write")
+                if w.get("op") not in WRITE_OPS:
+                    fail(f"app.json#events['{a}']: writes[] op '{w.get('op')}' — "
+                         f"must be one of {'|'.join(WRITE_OPS)}")
+            elif w.get("state"):
+                pass  # app-local state write — always legal
+            else:
+                fail(f"app.json#events['{a}']: writes[] entry needs binding+op or state")
+    for bid, b in bids.items():
+        if b.get("direction") == "read-write" and bid not in writers:
+            fail(f"app.json#bindings['{bid}']: read-write but no event writes it "
+                 f"(declare a writes[] entry or make it read)")
+
+
 def check_hygiene(app):
     state = app / "state"
     if state.is_dir():
@@ -448,10 +605,12 @@ def main():
 
     emitted = {}   # action -> {screen ids that emit it}
     all_region_ids = set()
+    screen_regions = {}   # screen id -> {region ids on it} (binding cross-check)
     reachable_forward = set()   # screen ids reached by a forward nav: link in a content region
     for sid in sorted(set(ids) & set(files)):
         actions, rids, forward = check_screen_file(files[sid], sid, ids, parent_of, roots)
         all_region_ids |= rids
+        screen_regions[sid] = rids
         reachable_forward |= forward
         for a in actions:
             emitted.setdefault(a, set()).add(sid)
@@ -490,6 +649,12 @@ def main():
         if parent_of.get(sid) is not None and sid not in reachable:
             fail(f"screen '{sid}' is a leaf but nothing links into it "
                  f"(no forward nav:{sid} in a content region and no events[] target={sid}) — unreachable")
+
+    # binding layer (APP_MODEL §bindings / PROCESSES §AUDIT) — orthogonal to
+    # layout+nav: context.json index, the bindings[] registry, events[].writes[]
+    ctx = check_context(app)
+    bids = check_bindings(m, ids, screen_regions, ctx)
+    check_writes(m, bids)
 
     check_hygiene(app)
     return report()

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/RasaOS/domain-canvas/main/schemas/rasa.canvas.context.v1.schema.json",
+  "title": "rasa.canvas.context.v1 — the per-install context index (context.json)",
+  "description": "Written by the AUDIT process (content/PROCESSES.md): the per-install registry of what exists to bind to — tenant flavor, sibling domains + modules, each module's collections (dir, record shape, per-field types, states, writable), and tenant data files. Per-install, discovered, disposable (re-derivable by re-running AUDIT). The index plans; files decide.",
+  "type": "object",
+  "required": ["_schema", "_audited_at", "_tenant_flavor", "_tenant_root"],
+  "additionalProperties": false,
+  "properties": {
+    "_schema": { "const": "rasa.canvas.context.v1" },
+    "_audited_at": {
+      "type": "string",
+      "minLength": 10,
+      "description": "ISO-8601 timestamp of the audit that wrote this index; advisory staleness signal"
+    },
+    "_tenant_flavor": {
+      "enum": ["holding-folder", "co-located", "canon-author"],
+      "description": "structural detection (PROCESSES.md §AUDIT step 1) — never inferred from the mere presence of elements/"
+    },
+    "_tenant_root": {
+      "type": "string",
+      "description": "the tenant root, relative to this app directory"
+    },
+    "tenant": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "claude_md": { "type": "string", "description": "path to the tenant's CLAUDE.md, relative to this app directory" }
+      }
+    },
+    "domains": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "path"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "path": { "type": "string" },
+          "version": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "path"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "path": { "type": "string" },
+          "version": { "type": "string" },
+          "parent_kind": { "type": "array", "items": { "type": "string" } },
+          "seam": { "type": "string", "description": "the module's declared structure/config file, when one exists (read FIRST during discovery)" },
+          "collections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "dir", "shape"],
+              "additionalProperties": false,
+              "properties": {
+                "id": { "type": "string" },
+                "dir": { "type": "string", "description": "collection directory, relative to the module's install/data root" },
+                "shape": { "enum": ["folder-of-records", "folder-per-topic", "single-file", "table"] },
+                "record": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "file_glob": { "type": "string" },
+                    "fields": {
+                      "type": "object",
+                      "additionalProperties": { "type": "string" },
+                      "description": "field name → type string ('string', 'date', 'enum(a|b|c)', …) — inferred, advisory"
+                    },
+                    "states": { "type": "array", "items": { "type": "string" }, "description": "state subdirectories, in lifecycle order, when directory==state" }
+                  }
+                },
+                "writable": { "type": "boolean", "description": "whether write-back is permitted here (module-mediated first — resolved OQ-4)" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "tenant_data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string" },
+          "kind": { "type": "string" },
+          "purpose": { "type": "string" }
+        }
+      }
+    }
+  }
+}

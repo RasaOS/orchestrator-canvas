@@ -27,6 +27,21 @@ session that reads it can take over any app cold — no archaeology, no asking.
   stay the source; derived views are disposable and carry `_source` +
   `_derived_at` fields so staleness is visible.
 
+## The context index — context.json
+
+Written by the AUDIT process (PROCESSES.md §AUDIT): the per-install registry of
+what exists to bind to — the tenant flavor, sibling domains + modules, each
+module's collections (dir, record shape, per-field types, states, `writable`),
+and tenant data files. Published schema: `rasa.canvas.context.v1`
+(`schemas/rasa.canvas.context.v1.schema.json`).
+
+- **Per-install, discovered, disposable** — re-derivable by re-running AUDIT;
+  nothing from it is ever baked into the element (`content/` stays generic).
+- **Staleness:** BOOTSTRAP always re-audits; any turn whose binding/data target
+  fails to resolve re-audits before erroring; `_audited_at` is advisory.
+- **The index plans; files decide.** Re-read sources before any publish; the
+  index is a map, never the territory.
+
 ## app.json — the manifest
 
 ```json
@@ -64,14 +79,48 @@ Rules:
 - `data_sources[]` paths are tenant-relative; never point outside the tenant
   root.
 
+## bindings[] — the binding registry
+
+Binding the UI to the tenant's real data is this element's **main objective**.
+One `bindings[]` row per bound region: the declared data relationship the
+screen renders. Schema: `bindings[]` in `rasa.app.v1` (published); check-app
+enforces the cross-field law.
+
+- **`id`** — unique across the registry (check-app enforces).
+- **`region` + `screen`** — must name a registered screen and a region that
+  exists on it. One row per region; multiple bindings may share a source.
+- **`source`** — exactly ONE of: `{module, collection, select?}` (a sibling
+  module's collection — must resolve in `context.json#modules`, and
+  `read-write` requires the collection be marked `writable`); `{tenant:
+  "<path>"}` (a tenant file, tenant-relative, never outside the root);
+  `{context: "<query>"}` (derived mode). `select` v1 grammar is `"*"` only.
+- **`mode`** — `bound` (live relationship) · `derived` (synthesized snapshot,
+  stamped in `data/`) · `provision` (created-then-bound; carries
+  `provisioned: true`). BUILDER §binding-modes is the operating recipe.
+- **`direction`** — `read` | `read-write`. A `read-write` binding must have at
+  least one event that writes it (check-app enforces).
+- **`reactive`** — absent/`on-event` (re-derive on the next EVENT turn) |
+  `live` (auto-updates on external file change — needs the kernel file-event
+  bridge, KERNEL_ASKS #11; the same declaration upgrades free).
+- **`events[].writes[]`** — what an action mutates, in write-order:
+  `{binding, op, field?}` entries execute per the executor rule (PROCESSES.md
+  §EVENT); `{state: "<file>"}` entries are app-local memory. `op` ∈
+  `create-record | update-record | move-record | delete-record`.
+- **`data_sources[]` is read-only sugar** — a row equals a binding
+  `{source:{tenant}, shape:"file", mode:"bound", direction:"read"}`. New
+  authoring prefers `bindings[]`; both are legal.
+
 ## Persistence — files are truth, Redis is a projection
 
 The kernel canvas store is Redis-backed and a container restart can wipe it
 (verified 2026-07-07; KERNEL_ASKS #6–8). Doctrine:
 
-- **The write-order law:** 1) `screens/<id>.json` → 2) `app.json` (+ `state/`
-  and `CHANGELOG.md` if touched) → 3) `canvas_set`. Never reversed, never
-  partial. A publish that skipped the file write didn't happen.
+- **The write-order law:** 1) bound-collection record writes (a `writes[]`
+  `{binding, op}` entry, per the executor rule — PROCESSES.md §EVENT) → 2)
+  `state/` files → 3) `screens/<id>.json` → 4) `app.json` (+ `CHANGELOG.md` if
+  touched) → 5) `canvas_set`. Never reversed, never partial. A publish that
+  skipped the file write didn't happen. (Turns with no `writes[]` collapse to
+  the last three steps.)
 - **It is an ORDER, not a transaction.** The session is the only writer and has
   no multi-file commit, so an interrupted turn can leave a half-written manifest
   or a screen file that disagrees with `app.json`. The recovery is REBUILD's
@@ -93,7 +142,8 @@ The kernel canvas store is Redis-backed and a container restart can wipe it
 
 ## Enforcement — the law is machine-checked
 
-- The manifest contract is published as `schemas/rasa.app.v1.schema.json` and
+- The manifest contract is published as `schemas/rasa.app.v1.schema.json`, the
+  context index as `schemas/rasa.canvas.context.v1.schema.json`, and
   the layout contract as `schemas/rasa.layout.v1.json` — the vendored copy of
   `RasaOS/schema`'s `rasa.layout.v1.json` (== the kernel's enforced copy).
 - `bin/check-app <app-dir>` (ships with this element) audits an app against this
@@ -103,7 +153,7 @@ The kernel canvas store is Redis-backed and a container restart can wipe it
   `screen.layout_grid` + region `slot`, the 12-name component allowlist
   (canvas_set rejects anything else), per-component prop shapes (canon Appendix
   B.2), the kernel `validator.ts` caps (256KB layout / 64 regions /
-  dup-region-id), and state/data hygiene. GREEN means "canvas_set will accept
+  dup-region-id), state/data hygiene, and the binding layer (`context.json` shape, the `bindings[]` registry — ids unique, `source` resolves in `context.json`, `read-write` has a writer — and `events[].writes[]` targets). GREEN means "canvas_set will accept
   this and it renders"; RED blocks a publish — see PROCESSES.md §gate.
 - The doctrine audits itself: `bin/check-doctrine` keeps BUILDER / APP_MODEL /
   PROCESSES / COMPONENTS in lockstep and gates every commit to the element.

@@ -15,6 +15,12 @@
       "props": { "value": "12", "label": "Open orders", "delta": "+3 this week" }
     },
     {
+      "id": "log",
+      "slot": "main",
+      "component": "button-row",
+      "props": { "buttons": [ { "id": "task_logged", "label": "Log task" } ] }
+    },
+    {
       "id": "notes",
       "slot": "main",
       "component": "markdown-block",

@@ -1,0 +1,19 @@
+{
+  "layout": "1.0.0",
+  "screen": {
+    "name": "home",
+    "title": "Home",
+    "layout_grid": "full",
+    "ai_rail_inherited": true
+  },
+  "regions": [
+    {
+      "id": "notes",
+      "slot": "main",
+      "component": "markdown-block",
+      "props": {
+        "content": "This fixture binds to a module absent from context.json \u2014 check-app must FAIL (not warn), because the index IS present (review #13)."
+      }
+    }
+  ]
+}

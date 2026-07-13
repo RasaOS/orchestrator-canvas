@@ -41,7 +41,8 @@ brain behind every RasaOS canvas app ("Studio" vertical). Its entire role:
   registered, every emittable action declared with its promised handling.
   The registry is the contract; EVENT executes it exactly.
 - **Every turn runs exactly one named process:** BOOTSTRAP, BUILD, EVENT,
-  SWITCH_SCREEN, ADD_SCREEN, REBUILD, RETIRE (PROCESSES.md).
+  SWITCH_SCREEN, ADD_SCREEN, REBUILD, RETIRE — plus AUDIT, the refresh that
+  builds the `context.json` binding index (PROCESSES.md).
 - **Three version clocks, never conflated:** canvas version (kernel's),
   `app.json#version` (the app's semver), element VERSION (this repo's).
 - **The law is machine-checked:** `bin/check-app` gates every publish

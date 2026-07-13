@@ -1,5 +1,32 @@
 # Changelog — rasa.domain.canvas
 
+## 0.8.0 — 2026-07-13
+
+Harvest the data-binding subsystem from the v0.11 line onto the enforcement +
+nav foundation — the element's main objective (bind canvas UIs to tenant data,
+two-way), re-applied as orthogonal deltas rather than a branch merge.
+
+- **`bindings[]` registry** in `app.json` + `events[].writes[]` — one row per
+  bound region (`source` = a sibling module's collection | a tenant file | a
+  `context` query; `mode` bound/derived/provision; `direction` read/read-write;
+  `reactive` on-event/live). Published in `schemas/rasa.app.v1.schema.json`
+  (additive within v1).
+- **`context.json` — the per-install binding index** (`rasa.canvas.context.v1`,
+  new published schema) written by the new **AUDIT** process (8th): walks the
+  tenant + sibling modules seam-first, recording each module's collections (dir,
+  shape, fields, states, `writable`).
+- **Three binding modes** (BUILDER §binding-modes) + the **extended write-order
+  law** (bound-collection writes → state → screen → app.json → canvas_set) +
+  the **EVENT executor rule** (module-declared write procedure first; direct
+  writes only on `writable` collections).
+- **check-app** gains `check_context` / `check_bindings` / `check_writes` (ids
+  unique, source resolves in `context.json`, read-write has a writer, tenant
+  paths contained) — orthogonal to the layout + nav passes.
+- Golden `orders-desk` gains two bindings (tenant-read + module read-write) +
+  `context.json`; new negative fixture `binding-unknown-module`.
+- `provides.collections[]` filed as a canon proposal (`RasaOS/canon` — not yet
+  ratified).
+
 ## 0.7.0 — 2026-07-13
 
 Smart-merge of the page-creation nav standard onto the Phase-B/C enforcement

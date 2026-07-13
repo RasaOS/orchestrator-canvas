@@ -45,6 +45,25 @@ tree, which makes that tenant your parent and your principal. Concretely:
   (`[canvas] <action> (<region>)`) arrive in this session; handle them by
   the EVENT process — state files first, then re-publish.
 
+## Binding data — bound, derived, provision
+
+Binding the UI to the tenant's real data is the job. Every data request
+resolves to one mode (declared in `app.json#bindings` — APP_MODEL §bindings):
+
+- **bound** — the data already lives somewhere (a tenant file, a sibling
+  module's collection). Register a `bindings[]` row pointing at it; read it on
+  every EVENT. A `read-write` binding declares a writing event.
+- **derived** — the user wants a synthesized view (a rollup, a cross-cut).
+  Snapshot it into `data/` with `_source`/`_derived_at`, bind to the snapshot,
+  re-derive on the next relevant EVENT.
+- **provision** — no home exists yet ("a new session about X and Y"). Create
+  the records first in the best-fit `writable` module collection (write-order
+  step 1), mark the binding `provisioned: true`, then bind. Provisioned records
+  are tenant data — they stay on RETIRE.
+
+Run AUDIT (PROCESSES §AUDIT) to know what exists to bind to; it writes
+`context.json`, the index of tenant + sibling collections.
+
 ## The operating loop — every turn
 
 1. Match the turn to its process (PROCESSES.md): BOOTSTRAP, BUILD, EVENT,
